@@ -1,0 +1,77 @@
+{
+    "bug":{
+        "damageClass":"physical",
+        "weakTo":["fire","poison","flying","rock"],
+        "resistantTo":["grass","fighting","ground"]
+    ,"nullTo": []}, 
+    "dragon":{
+        "damageClass":"special",
+        "weakTo":["ice","dragon"],
+        "resistantTo":["fire","water","electric","grass"]
+    ,"nullTo": []}, 
+    "electric":{
+        "damageClass":"special",
+        "weakTo":["ground"],
+        "resistantTo":["electric","flying"]
+    ,"nullTo": []}, 
+    "fighting":{
+        "damageClass":"physical",
+        "weakTo":["flying","psychic"],
+        "resistantTo":["bug","rock"]
+    ,"nullTo": []}, 
+    "fire":{
+        "damageClass":"special",
+        "weakTo":["water","ground","rock"],
+        "resistantTo":["fire","grass","bug"]
+    ,"nullTo": []}, 
+    "flying":{
+        "damageClass":"physical",
+        "weakTo":["electric","ice","rock"],
+        "resistantTo":["grass","fighting","bug"]
+    ,"nullTo": ["ground"]}, 
+    "ghost":{
+        "damageClass":"physical",
+        "weakTo":["ghost"],
+        "resistantTo":["bug","poison"]
+    ,"nullTo": ["normal","fighting"]}, 
+    "grass":{
+        "damageClass":"special",
+        "weakTo":["fire","ice","poison","flying","bug"],
+        "resistantTo":["water","electric","grass","ground"]
+    ,"nullTo": []}, 
+    "ground":{
+        "damageClass":"physical",
+        "weakTo":["water","grass","ice"],
+        "resistantTo":["poison","rock"]
+    ,"nullTo": ["electric"]}, 
+    "ice":{
+        "damageClass":"special",
+        "weakTo":["fire","fighting","rock"],
+        "resistantTo":["ice"]
+    ,"nullTo": []}, 
+    "normal":{
+        "damageClass":"physical",
+        "weakTo":["fighting"],
+        "resistantTo":[]
+    ,"nullTo": ["ghost"]},
+    "poison":{
+        "damageClass":"physical",
+        "weakTo":["ground","psychic","bug"],
+        "resistantTo":["grass","fighting","poison"]
+    ,"nullTo": []},
+    "psychic":{
+        "damageClass":"special",
+        "weakTo":["bug"],
+        "resistantTo":["fighting","psychic"]
+    ,"nullTo": ["ghost"]},
+    "rock":{
+        "damageClass":"physical",
+        "weakTo":["water","grass","fighting","ground"],
+        "resistantTo":["normal","fire","poison","flying"]
+    ,"nullTo": []},
+    "water":{
+        "damageClass":"special",
+        "weakTo":["electric","grass"],
+        "resistantTo":["fire","water","ice"]
+    ,"nullTo": []}
+}
