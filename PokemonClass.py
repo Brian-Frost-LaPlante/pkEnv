@@ -62,4 +62,4 @@ class Pokemon:
         self.evasion = 1
         self.whereIs = "field" # this is "underground" if dig, "air" if fly, "faint" if dead before turn ends
         self.turncount = {"toxic":0,"sleep":0,"confused":0}
-       
+        self.badgeboost = 0 # goes up once each time a stat change is applied
