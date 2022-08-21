@@ -6,6 +6,11 @@ from DamageCalculation import damageCalc
 from TrainerClass import Trainer
 from BattleClass import Battle
 
+import tkinter
+from tkinter import *
+from tkinter.messagebox import showerror
+from PIL import Image
+
 with open("gen1data/moveInfo_gen1.json") as jsonFile:
     moveList = json.load(jsonFile)
     jsonFile.close()

@@ -4,6 +4,11 @@ import math
 from AccuracyCheck import accuracyCheck
 from ParseAttack import parseAttack
 from Stage2Mult import stage2Mult
+import tkinter
+from tkinter import *
+from tkinter.messagebox import showerror
+from PIL import Image
+
 
 class Battle:
 
@@ -45,11 +50,13 @@ class Battle:
         # burn, poison and toxic all do damage based on the toxic counter, which is bizarre but true!
         if pokeChar.status == "burn":
             burnDamage = min(pokeChar.HP,max(math.ceil(pokeChar.maxHP/16),pokeChar.turncount["toxic"]*math.ceil(pokeChar.maxHP/16)))
-            pokeChar.HP = pokeChar.HP-burnDamage
+            pokeChar.activeStats[0] = pokeChar.HP-burnDamage
+            pokeChar.setStats()
             print(pokeChar.poke["name"] + " took "+str(burnDamage)+ " damage from its burn!")
         elif pokeChar.status == "poison":
             poisonDamage = min(pokeChar.HP,max(math.ceil(pokeChar.maxHP/16),pokeChar.turncount["toxic"]*math.ceil(pokeChar.maxHP/16)))
-            pokeChar.HP = pokeChar.HP-poisonDamage
+            pokeChar.activeStats[0] = pokeChar.HP-poisonDamage
+            pokeChar.setStats()
             print(pokeChar.poke["name"] + " took "+str(poisonDamage)+ " damage from poison!")
         if pokeChar.HP == 0:
             pokeChar.status = "faint"
@@ -404,6 +411,7 @@ class Battle:
         return
 
     def turn(self,optionPlayer,optionEnemy):
+        
         isOver = ""
         # option is a list of form [move/swap/item,address]
         optionTypePlayer = optionPlayer[0]
@@ -416,24 +424,30 @@ class Battle:
             self.player.team[0].turncount["confused"] = 0
             self.player.team[0], self.player.team[optionPlayer[1]] = self.player.team[optionPlayer[1]], self.player.team[0]
             self.player.team[0].statUpdate("send",self.player.badges)
+            self.guiUpdate()
         if optionTypeEnemy == "swap":
             print(self.enemy.name+" is swapping out "+self.enemy.team[0].poke["name"]+" and is sending in "+self.enemy.team[optionEnemy[1]].poke["name"])
             self.enemy.team[0].turncount["toxic"] = 0
             self.enemy.team[0].turncount["confused"] = 0
             self.enemy.team[0], self.enemy.team[optionEnemy[1]] = self.enemy.team[optionEnemy[1]], self.enemy.team[0]
             self.enemy.team[0].statUpdate("send",self.enemy.badges)
+            self.guiUpdate()
         # item happens next
         if optionTypePlayer == "item":
             self.useItem(self.player,optionPlayer[1])
+            self.guiUpdate()
         if optionTypeEnemy == "item":
             self.useItem(self.enemy,optionEnemy[1])
+            self.guiUpdate()
         # attacks happen next
         if optionTypeEnemy == "attack" or optionTypePlayer == "attack":
             isOver = self.attackPhase(optionPlayer,optionEnemy)
+            self.guiUpdate()
         else:
             #in this case, we have to check status conditions separately
             [lossPlayer,playerToSwitch] = self.statusCheck(self.player,self.player.team[0])
             [lossEnemy,enemyToSwitch] = self.statusCheck(self.enemy,self.enemy.team[0])
+            self.guiUpdate()
             if lossPlayer:
                 if lossEnemy:
                     print("Both players have lost the battle!")
@@ -453,10 +467,62 @@ class Battle:
                 self.swapIn(self.enemy)
         return isOver
 
+    def guiUpdate(self): 
+        enemypoke = self.enemy.team[0]
+        playerpoke = self.player.team[0]
+
+        self.label_stats_e1.configure(text=enemypoke.poke["name"]+"\nStatus: "+str(enemypoke.status).casefold()+"\nHP: "+str(enemypoke.HP)+"\nPP: "+str(enemypoke.PP),background="white")
+        self.label_stats_e2.configure(text="ATT:  "+str(enemypoke.attack)+"\nDEF:  "+str(enemypoke.defense)+"\nSPEC: "+str(enemypoke.special)+"\nSPD:  "+str(enemypoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
+
+
+        img_frontsprite = PhotoImage(file="gen1data/sprites/front-"+str(enemypoke.poke["number"])+".png")
+        self.label_frontsprite.configure(image=img_frontsprite)
+        self.label_frontsprite.image=img_frontsprite
+
+        img_backsprite = PhotoImage(file="gen1data/sprites/back-"+str(playerpoke.poke["number"])+".png")
+        self.label_backsprite.configure(image=img_backsprite)
+        self.label_backsprite.image = img_backsprite
+
+        self.label_stats_p1.configure(text=playerpoke.poke["name"]+"\nStatus: "+str(playerpoke.status).casefold()+"\nHP: "+str(playerpoke.HP)+"\nPP: "+str(playerpoke.PP),background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_p2.configure(text="ATT:  "+str(playerpoke.attack)+"\nDEF:  "+str(playerpoke.defense)+"\nSPEC: "+str(playerpoke.special)+"\nSPD:  "+str(playerpoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
+
+
     def __init__(self,player,enemy,typeInfo):
         self.typeInfo = typeInfo
         self.player = player
         self.enemy = enemy
+
+        ### GUI INITIALIZATION
+        root = Tk()
+        root.title('Battle')
+        root.geometry('250x150')
+        root.configure(background = "white")
+        root.resizable(False, False)
+        options = {'padx': 5, 'pady': 5}
+
+        # grab enemy pokemon details
+        enemypoke = self.enemy.team[0]
+        playerpoke = self.player.team[0]
+
+        self.label_stats_e1 = Label(root,text=enemypoke.poke["name"]+"\nStatus: "+str(enemypoke.status).casefold()+"\nHP: "+str(enemypoke.HP)+"\nPP: "+str(enemypoke.PP),background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_e1.grid(column=0,row=0,sticky='W',**options)
+        self.label_stats_e2 = Label(root,text="ATT:  "+str(enemypoke.attack)+"\nDEF:  "+str(enemypoke.defense)+"\nSPEC: "+str(enemypoke.special)+"\nSPD:  "+str(enemypoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_e2.grid(column=1,row=0,sticky='W',**options)
+
+        img_frontsprite = PhotoImage(file="gen1data/sprites/front-"+str(enemypoke.poke["number"])+".png")
+        self.label_frontsprite = Label(root,image=img_frontsprite,background="white")
+        self.label_frontsprite.grid(column=2,row=0,**options)
+
+        self.label_stats_p1 = Label(root,text=playerpoke.poke["name"]+"\nStatus: "+str(playerpoke.status).casefold()+"\nHP: "+str(playerpoke.HP)+"\nPP: "+str(playerpoke.PP),background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_p1.grid(column=1,row=1,sticky='W',**options)
+        self.label_stats_p2 = Label(root,text="ATT:  "+str(playerpoke.attack)+"\nDEF:  "+str(playerpoke.defense)+"\nSPEC: "+str(playerpoke.special)+"\nSPD:  "+str(playerpoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_p2.grid(column=2,row=1,sticky='W',**options)
+        
+        img_backsprite = PhotoImage(file="gen1data/sprites/back-"+str(playerpoke.poke["number"])+".png")
+        self.label_backsprite = Label(root,image=img_backsprite,background="white")
+        self.label_backsprite.grid(column=0,row=1,**options)
+        ###
+
 
         print(self.player.name+" sends out "+self.player.team[0].poke["name"]+"!")
         self.player.team[0].statUpdate("send",self.player.badges)
@@ -465,9 +531,11 @@ class Battle:
 
         isOver = ""
         while isOver == "":
+            self.guiUpdate()
             print("")
             optionPlayer = self.pickOptions(self.player)
             print("")
-            optionEnemy = self.pickOptions(self.enemy)
+            optionEnemy = self.pickOptions(self.enemy) 
             isOver = self.turn(optionPlayer,optionEnemy)
-            
+
+        input()    

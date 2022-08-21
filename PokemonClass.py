@@ -80,16 +80,16 @@ class Pokemon:
             # similar for burn
             self.activeStats[1] = max(1,math.floor(self.attack/2))
 
-        elif reason[0:1] == "-p":
+        elif reason[0:2] == "-p":
             # the case of removing a stat condition is horribly confusing and depends on the item or method being used to do so.
             # I WILL ADD THIS LATER
             return
-        elif reason[0:1] == "-b":
+        elif reason[0:2] == "-b":
             # the case of removing a stat condition is horribly confusing and depends on the item or method being used to do so.
             # I WILL ADD THIS LATER
             return
         
-        elif reason[0:2] == "mod":
+        elif reason[0:3] == "mod":
             # parse the string. It will be of the form "mod:stat:stage:self/enemy employing stat change:enemy status"
                 reasonSplit = str.split(reason,":")
                 ind = ["attack","defense","special","speed","accuracy","evasion","crit"].index(reasonSplit[1])
@@ -102,28 +102,27 @@ class Pokemon:
                         print("This stat is already too high!")
                     elif (modNum<0) and (preMod == -6):
                         print("This stat is already too low!")
-                    elif (ind<4):
-                        # here we will just check if the stat is already 1 or 999
-                        if (modNum>0) and (self.activeStats[ind+1]==999): # add 1 because of HP not being in the mod list
-                            print("This stat is already too high!")
-                        elif (modNum<0) and (self.activeStats[ind+1]==1): # add 1 because of HP not being in the mod list
-                            print("This stat is already too low!")
                     else:
+                        # here we will just check if the stat is already 1 or 999
+                        if (ind<4) and (modNum>0) and (self.activeStats[ind+1]==999): # add 1 because of HP not being in the mod list
+                            print("This stat is already too high!")
+                        elif (ind<4) and (modNum<0) and (self.activeStats[ind+1]==1): # add 1 because of HP not being in the mod list
+                            print("This stat is already too low!")
                         # in this case the stat change goes through. This is where things get totally absurd
                         # 1) The stat stage itself is raised or lowered according to the move's effect.
                         # simple enough
-                        if modNum<0:
+                        elif modNum<0:
                             self.modifiers[ind] = max(-6,self.modifiers[ind]+modNum)
                             if modNum == -1:
-                                print("The Pokemon's " + reasonSplit[1] + "was decreased!")
+                                print("The Pokemon's " + reasonSplit[1] + " was decreased!")
                             if modNum == -2:
-                                print("The Pokemon's " + reasonSplit[1] + "was greatly decreased!")
+                                print("The Pokemon's " + reasonSplit[1] + " was greatly decreased!")
                         else:
                             self.modifiers[ind] = min(6,self.modifiers[ind]+modNum)
                             if modNum == 1:
-                                print("The Pokemon's " + reasonSplit[1] + "was increased!")
+                                print("The Pokemon's " + reasonSplit[1] + " was increased!")
                             if modNum == 2:
-                                print("The Pokemon's " + reasonSplit[1] + "was greatly increased!")    
+                                print("The Pokemon's " + reasonSplit[1] + " was greatly increased!")    
                         # 2) The stat is recalculated as the original out-of-battle stat multiplied by the ratio corresponding to the new stat stage. If we're raising the stat, it's capped at 999; if we're lowering the stat, it's bumped up to 1 if it ends up at zero. So far, so good.
                         # note that we don't take paralysis or burn into account yet.
                         if ind<4:
@@ -165,6 +164,7 @@ class Pokemon:
                         
         else:
             print("You messed up, Brian!!! Check the reason input to statUpdate")
+            print(reason[0:3])
         # finally, update the nice-named stats
         self.setStats()
         return enemyChange

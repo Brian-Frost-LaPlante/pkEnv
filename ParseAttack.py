@@ -123,7 +123,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
             # "damage:multihit" and "damage:twohit" require slightly more intricate damage calculation
             if cats[1] == "instakill":
                 damage = pokeDefender.HP
-                pokeDefender.HP = 0
+                pokeDefender.activeStats[0] = 0
+                pokeDefender.setStats()
                 #check type immunity and level
                 if ((move["type"]=="normal") and ("ghost" in pokeAttacker.poke["types"])) or ((move["type"]=="ground") and ("flying" in pokeDefender.poke["types"])) or (pokeDefender.level>pokeAttacker.level):
                     print("The move has no effect!")
@@ -134,11 +135,13 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
             elif cats[1] in ["standard","enemy","heal","recoil","sd"]:
                 # These are all of the moves that deal regularly calculated damage once
                 damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
-                pokeDefender.HP =pokeDefender.HP-damage
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
                 # self-destructing moves can kill either the attacker or both the attacker and defender
                 if cats[1] == "sd":
-                    pokeAttacker.HP = 0
+                    pokeDefender.activeStats[0] = 0
+                    pokeDefender.setStats()
                     print(pokeAttacker.poke["name"]+" has fainted in noble sacrifice!")
                     if pokeDefender.HP == 0:
                         print(pokeDefender.poke["name"]+" has fainted!")
@@ -147,7 +150,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                         return "attacker:faint"
                 elif cats[1] == "recoil":
                     selfDamage = min(math.ceil(damage/4),pokeAttacker.HP)
-                    pokeAttacker.HP = pokeAttacker.HP-selfDamage
+                    pokeAttacker.activeStats[0] = pokeAttacker.HP-selfDamage
+                    pokeAttacker.setStats()
                     print(pokeAttacker.poke["name"]+" suffered "+str(selfDamage)+" in recoil damage!")
                     if pokeDefender.HP==0:
                         print(pokeDefender.poke["name"]+" has fainted!")
@@ -167,7 +171,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                 # for heal, standard and effect moves we only need to consider the enemy's chance to faint
                 elif cats[1] == "heal":
                     selfHeal = min(math.ceil(damage/2),pokeAttacker.maxHP-pokeAttacker.HP)
-                    pokeAttacker.HP = pokeAttacker.HP+selfHeal
+                    pokeAttacker.activeStats[0] = pokeAttacker.HP+selfHeal
+                    pokeAttacker.setStats()
                     print(pokeAttacker.poke["name"]+" healed for "+str(selfHeal)+"!")
                 # check if defender fainted
                 if pokeDefender.HP == 0:
@@ -212,21 +217,14 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                                 pokeDefender.flinching = True
                         else:
                             # this means the attacks inflicts a stat change
-                            stat = cats[2]
-                            stage = int(cats[3])
-                            # modifier index is attack, defense, special, speed, accuracy, evasion, crit chance
-                            statarray = ["attack","defense","special","speed","accuracy","evasion","crit"]
-                            statIndex = statarray.index(stat)
-                            currentStage = pokeDefender.modifiers[statIndex]
-                            if (currentStage == -6):
-                                print("That stat is already too low!")
-                            else:
-                                pokeDefender.modifiers[statIndex] = max(-6,currentStage+stage)
-                                if stage == -1:
-                                    print(pokeDefender.poke["name"]+"'s "+statarray[statIndex]+" has been lowered!")
-                                else:
-                                    print(pokeDefender.poke["name"]+"'s "+statarray[statIndex]+" has been greatly lowered!")
-                                #badge boost here
+                            enemyChange = pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
+                        if enemyChange == "speed":
+                            pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
+                            pokeDefender.setStats()
+                        elif enemyChange == "attack":
+                            pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
+                            pokeDefender.setStats()
+
             else:
                 # multihit case. a multihit move deal the same amount of damage n times
                 damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
@@ -245,7 +243,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                         n = 5
                 for i in range(n):
                     min(pokeDefender.HP,damage)
-                    pokeDefender.HP =pokeDefender.HP-damage
+                    pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                    pokeDefender.setStats()
                     print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
                     # check to see if the pokemon fainted. whenever it does, end the attack
                     if pokeDefender.HP == 0:
@@ -264,7 +263,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
             print("The move missed!")
             if move["name"] in ["Jump Kick","Hi Jump Kick"]:
                 # The jump kick moves do one damage to the user when they miss (yes, really, 1)
-                pokeAttacker.HP = pokeAttacker.HP-1
+                pokeAttacker.activeStats[0] = pokeAttacker.HP-1
+                pokeAttacker.setStats()
                 print(pokeAttacker.poke["name"]+" hit a wall and took 1 damage!")
                 if pokeAttacker.HP == 0:
                     print(pokeAttacker.poke["name"]+" has fainted!")
