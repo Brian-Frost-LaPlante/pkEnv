@@ -99,7 +99,7 @@ class Battle:
             # check if attack will land
             if pokeAttacker.status != "sleep":
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo)
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
             #handle the case where either player's pokemon has fainted
             [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
             if lossAttacker:
@@ -150,14 +150,8 @@ class Battle:
             else:
                 # check speed if there is a priority tie
                 # implement speed stat stages and paralysis here
-                playerRawSpeed = self.player.team[0].speed
-                playerSpeed = math.floor(playerRawSpeed*stage2Mult(self.player.team[0].modifiers[3]))
-                if self.player.team[0].status == "paralyze":
-                    playerSpeed = math.floor(playerSpeed/4)
-                enemyRawSpeed = self.enemy.team[0].speed
-                enemySpeed = math.floor(enemyRawSpeed*stage2Mult(self.enemy.team[0].modifiers[3]))
-                if self.enemy.team[0].status == "paralyze":
-                    enemySpeed = math.floor(enemySpeed/4)
+                playerSpeed = self.player.team[0].speed
+                enemySpeed = self.enemy.team[0].speed
                 
                 if playerSpeed == enemySpeed:
                     # speed tie case. coin toss
@@ -187,7 +181,7 @@ class Battle:
             pokeDefender=defender.team[0]
             if pokeAttacker.status != "sleep":
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo)
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
 
             # check for possible losses or deaths
             [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
@@ -226,7 +220,7 @@ class Battle:
                 if not pokeAttacker.flinching:
                     if pokeAttacker.status != "sleep":
                         print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-                    result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo)
+                    result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
                     [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
                     if lossAttacker:
                         if lossDefender:
@@ -348,9 +342,9 @@ class Battle:
         
         print(character.name+" is sending in "+character.team[option].poke["name"])
         character.team[0].turncount["toxic"] = 0
-        character.team[0].turncount["sleep"] = 0
         character.team[0].turncount["confused"] = 0
         character.team[0], character.team[option] = character.team[option], character.team[0]
+        character.team[0].statUpdate("send",character.badges)
         return ""
 
     def pickOptions(self,character):
@@ -421,11 +415,13 @@ class Battle:
             self.player.team[0].turncount["toxic"] = 0
             self.player.team[0].turncount["confused"] = 0
             self.player.team[0], self.player.team[optionPlayer[1]] = self.player.team[optionPlayer[1]], self.player.team[0]
+            self.player.team[0].statUpdate("send",self.player.badges)
         if optionTypeEnemy == "swap":
             print(self.enemy.name+" is swapping out "+self.enemy.team[0].poke["name"]+" and is sending in "+self.enemy.team[optionEnemy[1]].poke["name"])
             self.enemy.team[0].turncount["toxic"] = 0
             self.enemy.team[0].turncount["confused"] = 0
             self.enemy.team[0], self.enemy.team[optionEnemy[1]] = self.enemy.team[optionEnemy[1]], self.enemy.team[0]
+            self.enemy.team[0].statUpdate("send",self.enemy.badges)
         # item happens next
         if optionTypePlayer == "item":
             self.useItem(self.player,optionPlayer[1])
@@ -461,7 +457,11 @@ class Battle:
         self.typeInfo = typeInfo
         self.player = player
         self.enemy = enemy
-        self.turnCount = 0
+
+        print(self.player.name+" sends out "+self.player.team[0].poke["name"]+"!")
+        self.player.team[0].statUpdate("send",self.player.badges)
+        print(self.enemy.name+" sends out "+self.enemy.team[0].poke["name"]+"!")
+        self.enemy.team[0].statUpdate("send",self.enemy.badges)
 
         isOver = ""
         while isOver == "":

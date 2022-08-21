@@ -4,7 +4,7 @@ from DamageCalculation import damageCalc
 from ConfuseCalculation import confuseCalc
 from AccuracyCheck import accuracyCheck
 
-def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo):
+def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge):
     move = pokeAttacker.moveset[moveAddress]
     category = move["category"]
     cats = str.split(category,':')
@@ -56,9 +56,11 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo):
                     elif (cats[1] == 'burn') and ("fire" not in pokeDefender.poke["types"]):
                         pokeDefender.status = "burn"
                         print(pokeDefender.poke["name"]+" has been burned!")
+                        pokeDefender.statUpdate("+burn",defBadge)
                     elif cats[1] == "paralyze":
                         pokeDefender.status = "paralyze"
                         print(pokeDefender.poke["name"]+" has been paralyzed!")
+                        pokeDefender.statUpdate("+paralyze",defBadge)
                     elif (cats[1] == 'toxic') and ("poison" not in pokeDefender.poke["types"]):
                         pokeDefender.status = "poison"
                         print(pokeDefender.poke["name"]+" has been badly poisoned!")
@@ -91,40 +93,18 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo):
     elif cats[0] == 'stat':
         if cats[1] == 'self':
             # self stat-ups cannot miss. They can fail due to par or conf. They also fail after +6
-            # They can apply badge boost which is the most complicated bit    
-            stat = cats[2]
-            stage = int(cats[3])
-            # modifier index is attack, defense, special, speed, accuracy, evasion, crit chance
-            statarray = ["attack","defense","special","speed","accuracy","evasion","crit"]
-            statIndex = statarray.index(stat)
-            currentStage = pokeAttacker.modifiers[statIndex]
-            if (currentStage == 6) or (stat=="crit" and currentStage==-1):
-                print("That stat is already too high!")
-            else:
-                pokeAttacker.modifiers[statIndex] = min(6,currentStage+stage)
-                if stage == 1:
-                    print(pokeAttacker.poke["name"]+"'s "+statarray[statIndex]+" has been raised!")
-                else:
-                    print(pokeAttacker.poke["name"]+"'s "+statarray[statIndex]+" has been greatly raised!")
-                #badge boost here
+            # They can apply badge boost and make the defending pokemon lose att/speed due to burn/par glitch    
+            enemyChange = pokeAttacker.statUpdate("mod:"+cats[2]+":"+cats[3]+":self:"+pokeDefender.status,attBadge)
+            if enemyChange == "speed":
+                pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
+                pokeDefender.setStats()
+            elif enemyChange == "attack":
+                pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
+                pokeDefender.setStats()
         elif cats[1] == 'enemy':
             # enemy stat-ups can miss, fail due to par or conf and miss due to the enemy being in the sky/underground
             if accResult == "success":
-                stat = cats[2]
-                stage = int(cats[3])
-                # modifier index is attack, defense, special, speed, accuracy, evasion, crit chance
-                statarray = ["attack","defense","special","speed","accuracy","evasion","crit"]
-                statIndex = statarray.index(stat)
-                currentStage = pokeDefender.modifiers[statIndex]
-                if (currentStage == -6):
-                    print("That stat is already too low!")
-                else:
-                    pokeDefender.modifiers[statIndex] = max(-6,currentStage+stage)
-                    if stage == -1:
-                        print(pokeDefender.poke["name"]+"'s "+statarray[statIndex]+" has been lowered!")
-                    else:
-                        print(pokeDefender.poke["name"]+"'s "+statarray[statIndex]+" has been greatly lowered!")
-                    #badge boost here
+                pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
             else:
                 print("The move missed!")
 

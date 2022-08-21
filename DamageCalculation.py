@@ -8,7 +8,7 @@ def damageCalc(Attacker,Defender,moveNumber,typeInfo):
     defMod = stage2Mult(Defender.modifiers[1])
     attspecMod = stage2Mult(Attacker.modifiers[2])
     defspecMod = stage2Mult(Defender.modifiers[2])
-    isCritMod = stage2Mult(Attacker.modifiers[6])
+    isCritMod =Attacker.modifiers[6]
     move = Attacker.moveset[moveNumber]
     status = Attacker.status
     wall = Defender.wall
@@ -29,6 +29,7 @@ def damageCalc(Attacker,Defender,moveNumber,typeInfo):
         damage = math.ceil(Defender.HP/2)
     elif move["name"] == "Psywave":
         damage = random.randint(1,math.floor(1.5*level))
+
     else: #if not a fixed damage move
         # Compute crit chance
         baseSpeed = Attacker.poke["base stats"][4]
@@ -51,42 +52,39 @@ def damageCalc(Attacker,Defender,moveNumber,typeInfo):
             level = 2*Attacker.level   
             print("A critical hit!")
 
-        burnLoss = 1    
         wallGain = 1
         damageClass = typeInfo[moveType]["damageClass"]
 
         if not isCrit: # not a crit
             if damageClass == "physical":
-                if status == "burn":
-                    burnLoss = 2
                 if "reflect" in wall:
                     wallGain = 2
-                attStat = math.floor(math.floor(Attacker.attack*attMod)/burnLoss)
+                attStat = Attacker.attack
                 if move["name"] in ["Explosion","SelfDestruct"]:
-                    defStat = math.floor(math.floor(Defender.defense*defMod)/2)*wallGain
+                    defStat = math.floor(Defender.defense/2)*wallGain
                 else:
-                    defStat = math.floor(Defender.defense*defMod)*wallGain
+                    defStat = math.floor(Defender.defense)*wallGain
             else:
-                attStat = Attacker.special*attspecMod
+                attStat = Attacker.special
                 if "light screen" in wall:
                     wallGain = 2
                 if move["name"] in ["Explosion","SelfDestruct"]:
-                    defStat = math.floor(math.floor(Defender.special*defspecMod)/2)*wallGain
+                    defStat = math.floor(Defender.special/2)*wallGain
                 else:
-                    defStat = math.floor(Defender.special*defspecMod)*wallGain
+                    defStat = Defender.special*wallGain
         else: # is a crit
             if damageClass == "physical":
-                attStat = Attacker.attack
+                attStat = Attacker.outOfBattleStats[1]
                 if move["name"] in ["Explosion","SelfDestruct"]:
-                    defStat = math.floor(Defender.defense/2)
+                    defStat = math.floor(Defender.outOfBattleStats[2]/2)
                 else:
-                    defStat = Defender.defense
+                    defStat = Defender.outOfBattleStats[2]
             else:
-                attStat = Attacker.special
+                attStat = Attacker.outOfBattleStats[3]
                 if move["name"] in ["Explosion","SelfDestruct"]:
-                    defStat = math.floor(Defender.special/2)
+                    defStat = math.floor(Defender.outOfBattleStats[3]/2)
                 else:
-                    defStat = Defender.special
+                    defStat = Defender.outOfBattleStats[3]
 
         if (attStat > 255) or (defStat > 255):
             attStat = math.floor(attStat / 4) % 256

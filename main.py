@@ -28,14 +28,14 @@ pk1 = Pokemon(name,level,stats,stats[0],moves,[5,5,5,5],[5,5,5,5],pokemonList,mo
 name = "Pidgey"
 stats = [100,138,128,308,278]
 level = 1
-moves = ["toxic","sleep powder","seismic toss","counter"]
+moves = ["toxic","sleep powder","seismic toss","growl"]
 pk2 = Pokemon(name,level,stats,stats[0],moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 pk2.wall = ["reflect"]
 
 name = "Porygon"
 stats = [10,138,128,308,278]
 level = 100
-moves = ["psywave","psychic","seismic toss","counter"]
+moves = ["psywave","growl","seismic toss","counter"]
 pk3 = Pokemon(name,level,stats,stats[0],moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 
 #damage = []
@@ -45,8 +45,8 @@ pk3 = Pokemon(name,level,stats,stats[0],moves,[5,5,5,5],[5,5,5,5],pokemonList,mo
 #print(max(damage))
 #print(min(damage))
 
-player = Trainer("brian",[pk1],["another","more","some others"])
-enemy = Trainer("kevin",[pk2,pk3],["briantime XP"])
+player = Trainer("brian",[pk1],["another","more","some others"],[1,1,1,1])
+enemy = Trainer("kevin",[pk2,pk3],["briantime XP"],[1,1,1,0])
 battle = Battle(player,enemy,typeList)
 #playerOptions = battle.options(player)
 #enemyOptions = battle.options(enemy)
