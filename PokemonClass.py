@@ -72,7 +72,10 @@ class Pokemon:
                 self.activeStats[4] = min(999,math.floor(self.speed*1.125))
             if badges[3] == 1:
                 self.activeStats[3] = min(999,math.floor(self.special*1.125))
-            # and noiw setStats again so we can access with the nice names
+            
+            # also when we send in a pokemon its types are set back to normal (conversion is why this is necessary)
+            self.types = self.poke["types"]
+
         elif reason == "+paralysis":
             # pokemon getting paralyzed functions as expected
             self.activeStats[4] = max(1,math.floor(self.speed/4))
@@ -159,7 +162,7 @@ class Pokemon:
                     if preMod !=0:
                         print("This stat is already too high!")
                     else:
-                        self.modifiers[6] = 1
+                        self.modifiers[6] = -1
 
                         
         else:
@@ -169,9 +172,24 @@ class Pokemon:
         self.setStats()
         return enemyChange
 
+    def statReset(self):
+        self.modifiers = [0,0,0,0,0,0,0]
+        self.confused = False
+        self.activeStats[1:] = self.outOfBattleStats[1:]
+        self.setStats()
+        self.turncount["toxic"]=0
+        self.turncount["confused"]=0
+        if "mist" in self.wall:
+            self.wall.remove("mist")
+
     def __init__(self,name,level,stats,maxHP,moves,maxPP,PP,pokeList,moveList):
         self.setPoke(name,pokeList)
+        
+        # need to set the types separately because they can be modified by the move conversion
+        self.types = self.poke["types"]
+
         self.setMoveset(moves,moveList)
+        self.wall = []
         # when the pokemon gets sent out, no matter what, it starts with out of battle stats
         self.outOfBattleStats = stats
         # active stats, affected by modifiers and status, are what are actually used. 
@@ -189,10 +207,7 @@ class Pokemon:
         self.confused = False
         self.flinching = False
 
-        self.wall = []
         self.leechSeed= False
         self.modifiers = [0,0,0,0,0,0,0] # attack, defense, special, speed, accuracy, evasion, crit chance in stages
-        self.accuracy = 1
-        self.evasion = 1
         self.whereIs = "field" # this is "underground" if dig, "air" if fly, "faint" if dead before turn ends
         self.turncount = {"toxic":0,"sleep":0,"confused":0}

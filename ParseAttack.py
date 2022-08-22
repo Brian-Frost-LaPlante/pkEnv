@@ -16,7 +16,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
     elif accResult == "fail:confuse":
         print(pokeAttacker.poke["name"]+" hit itself in confusion!")
         damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
-        pokeAttacker.HP =pokeAttacker.HP-damage
+        pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
+        pokeAttacker.setStats()
         print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
         if pokeAttacker.HP == 0:
             print(pokeAttacker.poke["name"]+" has fainted!")
@@ -88,7 +89,17 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
             # mist lasts until switchout, reflect + light screen last two turns
             if wallname == "reflect" or "light screen":
                 pokeAttacker.turncount[wallname] = 5                    
-                
+               
+    # heal moves simply heal the self by 1/2 total health
+    elif cats[0] == 'heal':
+        toHeal = min(math.floor(pokeAttacker.maxHP/2),pokeAttacker.maxHP-pokeAttacker.HP)
+        if toHeal == 0:
+            print(pokeAttacker.poke["name"]+" is already at full health!")
+        else:
+            pokeAttacker.activeStats[0] = pokeAttacker.HP+toHeal
+            pokeAttacker.setStats()
+            print(pokeAttacker.poke["name"]+" healed for "+str(toHeal)+" HP!")
+
     # stat moves alter the self or enemy's stats
     elif cats[0] == 'stat':
         if cats[1] == 'self':
@@ -104,7 +115,10 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
         elif cats[1] == 'enemy':
             # enemy stat-ups can miss, fail due to par or conf and miss due to the enemy being in the sky/underground
             if accResult == "success":
-                pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
+                if "mist" in pokeDefender.wall:
+                    print(pokeDefender.poke["name"] + " is shrouded in mist!")
+                else:
+                    pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
             else:
                 print("The move missed!")
 
@@ -203,9 +217,11 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                                         print(pokeDefender.poke["name"]+" has been poisoned!")
                                     elif (cats[2] == 'burn') and ("fire" not in pokeDefender.poke["types"]):
                                         pokeDefender.status = "burn"
+                                        pokeDefender.statUpdate("+burn",defBadge)
                                         print(pokeDefender.poke["name"]+" has been burned!")
                                     elif cats[2] == "paralyze":
                                         pokeDefender.status = "paralyze"
+                                        pokeDefender.statUpdate("+paralyze",defBadge)
                                         print(pokeDefender.poke["name"]+" has been paralyzed!")
                             elif cats[2] == 'confuse':
                                 if not pokeDefender.confused:
@@ -218,12 +234,12 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                         else:
                             # this means the attacks inflicts a stat change
                             enemyChange = pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
-                        if enemyChange == "speed":
-                            pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
-                            pokeDefender.setStats()
-                        elif enemyChange == "attack":
-                            pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
-                            pokeDefender.setStats()
+                            if enemyChange == "speed":
+                                pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
+                                pokeDefender.setStats()
+                            elif enemyChange == "attack":
+                                pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
+                                pokeDefender.setStats()
 
             else:
                 # multihit case. a multihit move deal the same amount of damage n times
@@ -269,4 +285,58 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                 if pokeAttacker.HP == 0:
                     print(pokeAttacker.poke["name"]+" has fainted!")
                     return "attacker:faint"
+   
+    elif cats[0] == "dreameater":
+        if accResult == "success":
+            if pokeDefender.status != "sleep":
+                print("The move failed!")
+            else:
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                toHealTemp = max(1,math.floor(damage/2))
+                toHeal = min(pokeAttacker.maxHP-pokeAttacker.HP,toHealTemp)
+                if pokeAttacker.HP!=pokeAttacker.maxHP:
+                    pokeAttacker.activeStats[0] = pokeAttacker.HP+toHeal
+                    pokeAttacker.setStats()
+                    print(pokeAttacker.poke["name"]+" healed for "+str(toHeal)+" HP!")
+        else:
+            print("The move missed!")
+
+
+    # rest fails if the user is at full HP. Otherwise, it will clear all status conditions (without changing the stat changes they cause!), heal to full and put to sleep for 2 turns.
+    # for some reason, it also fails if maxHP-currentHP%256 == 255
+    elif cats[0]=="rest":
+        toHeal = pokeAttacker.maxHP-pokeAttacker.HP
+        if (toHeal==0) or (toHeal%256==255):
+            print("Rest failed!")
+        else:
+            print(pokeAttacker.poke["name"]+" has healed up and fallen asleep!")
+            pokeAttacker.activeStats[0] = pokeAttacker.maxHP
+            pokeAttacker.setStats()
+            pokeAttacker.status = "sleep"
+            pokeAttacker.turncount["sleep"] = 2
+
+    # conversion just changes the attacker's types to be those of the opponent
+    elif cats[0]=="conversion":
+        if accResult == "success":
+            pokeAttacker.types = pokeDefender.types
+            print(pokeAttacker.poke["name"]+" has changed type to match its opponent!")
+        else:
+            print("The move missed!")
+
+    elif cats[0]=="haze":
+        # first, haze resets all active stats to out of battle stats (except HP of course)
+        pokeAttacker.statReset()
+        pokeAttacker.wall = []
+        pokeAttacker.leechSeed=False
+
+        pokeDefender.statReset()
+        pokeDefender.wall = []
+        pokeDefender.leechSeed=False
+        pokeDefender.status="none"
+        print("Various stat effects have been nullified!")
+
+
     return ""

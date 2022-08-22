@@ -1,5 +1,6 @@
 import random
 import math
+from Stage2Mult import stage2Mult
 def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
     moveResult = "success"
     if pokeAttacker.status == "sleep":
@@ -43,7 +44,9 @@ def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
             return "success"
             
     moveAcc = math.floor(pokeAttacker.moveset[moveAddress]["acc"]*255/100)
-    acc = math.floor(moveAcc*pokeAttacker.accuracy*pokeDefender.evasion)
+    pokeAcc = stage2Mult(pokeAttacker.modifiers[4])
+    pokeEva = stage2Mult(-pokeDefender.modifiers[5])
+    acc = math.floor(moveAcc*pokeAcc*pokeEva)
     if pokeDefender.whereIs != "field":
         moveResult = "fail:"+pokeDefender.whereIs 
     elif acc<=accRoll:

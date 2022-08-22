@@ -1,0 +1,47 @@
+Freeze 99 PP glitch
+struggle implementation
+make it so that sleeping pokemon cant attack after haze 
+
+items
+
+moves to do:
+
+twoturn
+transform
+hyperbeam
+counter
+rage
+dig
+mimic
+bide
+metronome
+substitute
+fly
+leechseed
+firespin
+mirrormove
+bindlike
+thrashlike
+disable
+transform
+
+implemented move categories:
+damage: standard
+	instakill
+	enemy:stat
+	enemy:status
+	sd
+	heal
+	recoil
+	twohit
+	multihit
+null
+stat
+status
+wall
+heal
+rest
+conversion
+dreameater
+mist
+haze (-items, disable)

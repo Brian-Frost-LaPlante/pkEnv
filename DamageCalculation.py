@@ -91,7 +91,7 @@ def damageCalc(Attacker,Defender,moveNumber,typeInfo):
             defStat = math.floor(defStat / 4) % 256
 
         multiplier = 1
-        defenderTypes = Defender.poke["types"]
+        defenderTypes = Defender.types
         for type in defenderTypes:
             if moveType in typeInfo[type]["weakTo"]:
                 multiplier = multiplier*2
@@ -102,7 +102,7 @@ def damageCalc(Attacker,Defender,moveNumber,typeInfo):
         roll = random.randint(217,255)
 
         STAB = 1
-        if moveType.casefold() in Attacker.poke["types"]:
+        if moveType.casefold() in Attacker.types:
             STAB = 1.5
 
         baseDamage = math.floor(math.floor((math.floor((2*level)/5 + 2)*max(1,attStat)*power)/max(1,defStat))/50)

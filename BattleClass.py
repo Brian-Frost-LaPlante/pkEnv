@@ -348,8 +348,7 @@ class Battle:
                 print("That isn't a valid answer!")
         
         print(character.name+" is sending in "+character.team[option].poke["name"])
-        character.team[0].turncount["toxic"] = 0
-        character.team[0].turncount["confused"] = 0
+        character.team[0].statReset()
         character.team[0], character.team[option] = character.team[option], character.team[0]
         character.team[0].statUpdate("send",character.badges)
         return ""
@@ -419,16 +418,13 @@ class Battle:
         # swap happpens first always
         if optionTypePlayer == "swap":
             print(self.player.name+" is swapping out "+self.player.team[0].poke["name"]+" and is sending in "+self.player.team[optionPlayer[1]].poke["name"])
-            self.player.team[0].confused = False
-            self.player.team[0].turncount["toxic"] = 0
-            self.player.team[0].turncount["confused"] = 0
+            self.player.team[0].statReset()
             self.player.team[0], self.player.team[optionPlayer[1]] = self.player.team[optionPlayer[1]], self.player.team[0]
             self.player.team[0].statUpdate("send",self.player.badges)
             self.guiUpdate()
         if optionTypeEnemy == "swap":
             print(self.enemy.name+" is swapping out "+self.enemy.team[0].poke["name"]+" and is sending in "+self.enemy.team[optionEnemy[1]].poke["name"])
-            self.enemy.team[0].turncount["toxic"] = 0
-            self.enemy.team[0].turncount["confused"] = 0
+            self.enemy.team[0].statReset()
             self.enemy.team[0], self.enemy.team[optionEnemy[1]] = self.enemy.team[optionEnemy[1]], self.enemy.team[0]
             self.enemy.team[0].statUpdate("send",self.enemy.badges)
             self.guiUpdate()
