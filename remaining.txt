@@ -1,6 +1,5 @@
-Freeze 99 PP glitch
-struggle implementation
-make it so that sleeping pokemon cant attack after haze 
+Freeze 99 PP glitch and horrible two-hit haze glitch
+struggle implementation (including with disable)
 
 items
 
@@ -22,7 +21,6 @@ firespin
 mirrormove
 bindlike
 thrashlike
-disable
 transform
 
 implemented move categories:
@@ -44,4 +42,5 @@ rest
 conversion
 dreameater
 mist
-haze (-items, disable)
+haze (-items)
+disable

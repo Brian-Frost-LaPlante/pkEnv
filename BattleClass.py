@@ -44,6 +44,14 @@ class Battle:
         item = trainer.items[itemAddress]
         return
 
+    def disableCheck(self,pokeChar):
+        if (pokeChar.disable != ""):
+            pokeChar.turncount["disable"] = pokeChar.turncount["disable"]-1
+            if pokeChar.turncount["disable"] == 0:
+                print(pokeChar.poke["name"]+"'s "+pokeChar.disable+" is no longer disabled!")
+                pokeChar.disable = ""
+
+
     def statusCheck(self,character,pokeChar):
         loss = False
         toSwitch = False
@@ -190,6 +198,8 @@ class Battle:
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
             result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
 
+
+
             # check for possible losses or deaths
             [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
             if lossAttacker:
@@ -211,7 +221,7 @@ class Battle:
             # the attacker also may have died due to recoil, confusion, poison, burn or explosion/selfdestruct
             
             # this is the case that the defender is still alive after the turn
-            if result not in ["defender:faint","both:faint"]:
+            if result not in ["defender:faint","both:faint","unable"]:
                 if first == "player":
                     # enemy is attacking now
                     attacker=self.enemy
@@ -242,6 +252,8 @@ class Battle:
 
                 # status gets checked here so long as the pokemon didn't faint or knock out its opponent
                 if not (secondToSwitch or (result == "defender:faint")):
+                    if result not in ["sleep","freeze","flinch"]:
+                        self.disableCheck(pokeAttacker)
                     [lossAttacker,secondToSwitch] = self.statusCheck(attacker,pokeAttacker)
                     if lossAttacker:
                         return "loss:"+second
@@ -249,6 +261,29 @@ class Battle:
                     [lossDefender,firstToSwitch] = self.statusCheck(defender,pokeDefender)
                     if lossDefender:
                         return "loss:"+first                    
+
+            # one niche possibility is that the first pokemon used Haze while the second was asleep/frozen. In this case, the second pokemon should be unable to attack. in this case, result is "unable", and we skip to status check
+        if result == "unable":
+            if first == "player":
+                # enemy is attacking now
+                attacker=self.enemy
+                moveAddress = optionEnemy[1]
+                defender=self.player
+            else:
+                # player is attacking
+                attacker=self.player
+                moveAddress = optionPlayer[1]
+                defender=self.enemy
+
+            [lossAttacker,secondToSwitch] = self.statusCheck(attacker,pokeAttacker)
+            if lossAttacker:
+                return "loss:"+second
+            if not firstStatusChecked:
+                [lossDefender,firstToSwitch] = self.statusCheck(defender,pokeDefender)
+                if lossDefender:
+                    return "loss:"+first       
+
+
 
         if firstToSwitch:
             if first == "player":
@@ -371,6 +406,10 @@ class Battle:
                         print("That is not a valid choice!")
                     elif (int(option)>(len(attacks))) or (int(option)<1):
                         print("That is not a valid choice!")
+                    elif attacks[int(option)-1]["name"] == character.team[0].disable:
+                        print("That move is disabled!")
+                    elif character.team[0].PP[int(option)-1] == 0:
+                        print("That move has no PP!")
                     else:
                         return ["attack",int(option)-1]
             elif macroOption == '2':

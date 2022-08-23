@@ -179,8 +179,11 @@ class Pokemon:
         self.setStats()
         self.turncount["toxic"]=0
         self.turncount["confused"]=0
+        self.turncount["disable"]=0
+        self.disable=""
         if "mist" in self.wall:
             self.wall.remove("mist")
+        
 
     def __init__(self,name,level,stats,maxHP,moves,maxPP,PP,pokeList,moveList):
         self.setPoke(name,pokeList)
@@ -210,4 +213,8 @@ class Pokemon:
         self.leechSeed= False
         self.modifiers = [0,0,0,0,0,0,0] # attack, defense, special, speed, accuracy, evasion, crit chance in stages
         self.whereIs = "field" # this is "underground" if dig, "air" if fly, "faint" if dead before turn ends
-        self.turncount = {"toxic":0,"sleep":0,"confused":0}
+        self.turncount = {"toxic":0,"sleep":0,"confused":0,"disable":0}
+
+        self.disable = "" # this will contain the move that have been disabled
+        self.bound = False
+        self.recharging = False

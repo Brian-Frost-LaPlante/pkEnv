@@ -9,10 +9,18 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
     category = move["category"]
     cats = str.split(category,':')
 
+    if move["name"] == pokeAttacker.disable:
+        print(pokeAttacker.poke["name"]+ "'s "+move["name"]+" is disabled!")
+        pokeAttacker.turncount["disable"] = pokeAttacker.turncount["disable"]-1
+        if pokeAttacker.turncount["disable"] == 0:
+            print(pokeAttacker.poke["name"]+ "'s "+move["name"]+" is no longer disabled!")
+            pokeAttacker.disable = ""
+        return ""
+            
     # first, do an accuracy check to see if confusion, paralysis, freeze, or just plain missing stops the pokemon
     accResult = accuracyCheck(pokeAttacker,pokeDefender,moveAddress)
     if accResult == "fail:sleep":
-        return ""
+        return "sleep"
     elif accResult == "fail:confuse":
         print(pokeAttacker.poke["name"]+" hit itself in confusion!")
         damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
@@ -29,7 +37,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
         return ""
     elif accResult == "fail:freeze":
         print(pokeAttacker.poke["name"] + " is frozen and can't move!")
-
+        return "freeze"
     # there are so many cases... the simplest first...
     # null = no effect at all, like splash
     if cats[0] == "null":
@@ -82,7 +90,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
         # wall moves cant miss, but can fail from par or conf
         wallname = move["name"].casefold()
         if wallname in pokeAttacker.wall:
-            print(wallname+" is already up!")
+            print(wallname.capitalize()+" is already up!")
         else:
             pokeAttacker.wall.append(wallname)
             print(pokeAttacker.poke["name"]+" has put up "+wallname)
@@ -231,6 +239,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                                     print(pokeDefender.poke["name"]+" is now confused!")
                             elif cats[2] == "flinch":
                                 pokeDefender.flinching = True
+                                return "flinch"
                         else:
                             # this means the attacks inflicts a stat change
                             enemyChange = pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
@@ -258,7 +267,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                     else:
                         n = 5
                 for i in range(n):
-                    min(pokeDefender.HP,damage)
+                    damage = min(pokeDefender.HP,damage)
                     pokeDefender.activeStats[0] = pokeDefender.HP-damage
                     pokeDefender.setStats()
                     print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
@@ -301,6 +310,9 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                     pokeAttacker.activeStats[0] = pokeAttacker.HP+toHeal
                     pokeAttacker.setStats()
                     print(pokeAttacker.poke["name"]+" healed for "+str(toHeal)+" HP!")
+                if pokeDefender.HP == 0:
+                    print(pokeDefender.poke["name"]+" has fainted!")
+                    return "defender:faint"
         else:
             print("The move missed!")
 
@@ -335,8 +347,27 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
         pokeDefender.statReset()
         pokeDefender.wall = []
         pokeDefender.leechSeed=False
+        if pokeDefender.status in ["sleep","freeze"]:
+            print("Various stat effects have been nullified!")
+            pokeDefender.status="none"
+            return "unable"
         pokeDefender.status="none"
         print("Various stat effects have been nullified!")
 
+    elif cats[0]=="disable":
+        if pokeDefender.disable != "":
+            print(pokeDefender.poke["name"]+" already has a move disabled!")
+            return ""
+        validMoves = []
+        for i in range(len(pokeDefender.moveset)):
+            if pokeDefender.PP[i] !=0:
+                validMoves.append(pokeDefender.moveset[i]["name"])
+        if validMoves == []:
+            print("There are no moves to disable!")
+        else:
+            moveToDisable = random.choice(validMoves)
+            pokeDefender.disable = moveToDisable
+            pokeDefender.turncount["disable"] = random.randint(1,7)
+            print(pokeDefender.poke["name"]+" had its " + moveToDisable+" disabled!")
 
     return ""
