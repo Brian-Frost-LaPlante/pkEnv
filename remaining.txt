@@ -5,18 +5,14 @@ items
 
 moves to do:
 
-twoturn
 transform
 hyperbeam
 counter
 rage
-dig
 mimic
 bide
 metronome
 substitute
-fly
-leechseed
 firespin
 mirrormove
 bindlike
@@ -44,3 +40,7 @@ dreameater
 mist
 haze (-items)
 disable
+leechseed
+twoturn
+dig
+fly

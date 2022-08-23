@@ -181,6 +181,7 @@ class Pokemon:
         self.turncount["confused"]=0
         self.turncount["disable"]=0
         self.disable=""
+        self.leechSeed = False
         if "mist" in self.wall:
             self.wall.remove("mist")
         
@@ -218,3 +219,4 @@ class Pokemon:
         self.disable = "" # this will contain the move that have been disabled
         self.bound = False
         self.recharging = False
+        self.charging = -1 # this will be the index of the move that is charging

@@ -26,6 +26,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
         damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
         pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
         pokeAttacker.setStats()
+        pokeAttacker.whereIs = "field"
         print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
         if pokeAttacker.HP == 0:
             print(pokeAttacker.poke["name"]+" has fainted!")
@@ -34,10 +35,17 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
             return ""
     elif accResult == "fail:paralyze":
         print(pokeAttacker.poke["name"]+" is paralyzed and can't move!")
+        pokeAttacker.whereIs = "field"
         return ""
     elif accResult == "fail:freeze":
         print(pokeAttacker.poke["name"] + " is frozen and can't move!")
         return "freeze"
+    elif accResult == "fail:sky":
+        print(pokeAttacker.poke["name"]+" can't hit a Pokemon in the air!")
+        return ""
+    elif accResult == "fail:underground":
+        print(pokeAttacker.poke["name"]+" can't hit a Pokemon underground!")
+        return ""
     # there are so many cases... the simplest first...
     # null = no effect at all, like splash
     if cats[0] == "null":
@@ -369,5 +377,57 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
             pokeDefender.disable = moveToDisable
             pokeDefender.turncount["disable"] = random.randint(1,7)
             print(pokeDefender.poke["name"]+" had its " + moveToDisable+" disabled!")
+
+    elif cats[0]=="leechseed":
+        if "grass" in pokeDefender.types:
+            print("Leech Seed does not affect Grass-type Pokemon!")
+        else:
+            print(pokeDefender.poke["name"] + " is seeded!")
+            pokeDefender.leechSeed = True
+
+    elif cats[0]=="twoturn":
+        # two cases: this is the first turn (charging will be -1) or the second turn after charging
+        if pokeAttacker.charging == -1:
+            pokeAttacker.charging = moveAddress
+            print(pokeAttacker.poke["name"] + " is charging up!")
+        else:
+            pokeAttacker.charging = -1
+            if accResult == "success":
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+
+    elif cats[0]=="fly":
+        # two cases: this is the first turn (charging will be -1) or the second turn after charging
+        if pokeAttacker.charging == -1:
+            pokeAttacker.charging = moveAddress
+            print(pokeAttacker.poke["name"] + " has flown into the sky!")
+            pokeAttacker.whereIs = "sky"
+        else:
+            pokeAttacker.charging = -1
+            pokeAttacker.whereIs = "field"
+            if accResult == "success":
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+    elif cats[0]=="dig":
+        # two cases: this is the first turn (charging will be -1) or the second turn after charging
+        if pokeAttacker.charging == -1:
+            pokeAttacker.charging = moveAddress
+            print(pokeAttacker.poke["name"] + " has burrowed underground!")
+            pokeAttacker.whereIs = "underground"
+        else:
+            pokeAttacker.charging = -1
+            pokeAttacker.whereIs = "field"
+            if accResult == "success":
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+
+
+
 
     return ""
