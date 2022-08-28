@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 import math
 
 from Stage2Mult import stage2Mult
@@ -76,7 +76,7 @@ class Pokemon:
             # also when we send in a pokemon its types are set back to normal (conversion is why this is necessary)
             self.types = self.poke["types"]
 
-        elif reason == "+paralysis":
+        elif reason == "+paralyze":
             # pokemon getting paralyzed functions as expected
             self.activeStats[4] = max(1,math.floor(self.speed/4))
         elif reason == "+burn":

@@ -60,28 +60,31 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                 if pokeDefender.status != "none":
                     print("The pokemon is already afflicted by a status condition!")
                 else:
-                    if cats[1] == 'sleep':
-                        pokeDefender.turncount["sleep"] = random.randint(1,7)
-                        pokeDefender.status = "sleep"
-                        print(pokeDefender.poke["name"]+" has been put to sleep!")
-                    elif (cats[1] == 'freeze') and ("ice" not in pokeDefender.poke["types"]):
-                        pokeDefender.status = "freeze"
-                        print(pokeDefender.poke["name"]+" has been frozen!")
-                    elif (cats[1] == 'poison') and ("poison" not in pokeDefender.poke["types"]):
-                        pokeDefender.status = "poison"
-                        print(pokeDefender.poke["name"]+" has been poisoned!")
-                    elif (cats[1] == 'burn') and ("fire" not in pokeDefender.poke["types"]):
-                        pokeDefender.status = "burn"
-                        print(pokeDefender.poke["name"]+" has been burned!")
-                        pokeDefender.statUpdate("+burn",defBadge)
-                    elif cats[1] == "paralyze":
-                        pokeDefender.status = "paralyze"
-                        print(pokeDefender.poke["name"]+" has been paralyzed!")
-                        pokeDefender.statUpdate("+paralyze",defBadge)
-                    elif (cats[1] == 'toxic') and ("poison" not in pokeDefender.poke["types"]):
-                        pokeDefender.status = "poison"
-                        print(pokeDefender.poke["name"]+" has been badly poisoned!")
-                        pokeDefender.turncount["toxic"] = 1
+                    if move["type"] not in pokeDefender.types:
+                        if cats[1] == 'sleep':
+                            pokeDefender.turncount["sleep"] = random.randint(1,7)
+                            pokeDefender.status = "sleep"
+                            print(pokeDefender.poke["name"]+" has been put to sleep!")
+                        elif (cats[1] == 'freeze'): 
+                            pokeDefender.status = "freeze"
+                            print(pokeDefender.poke["name"]+" has been frozen!")
+                        elif (cats[1] == 'poison'):
+                            pokeDefender.status = "poison"
+                            print(pokeDefender.poke["name"]+" has been poisoned!")
+                        elif (cats[1] == 'burn'):
+                            pokeDefender.status = "burn"
+                            print(pokeDefender.poke["name"]+" has been burned!")
+                            pokeDefender.statUpdate("+burn",defBadge)
+                        elif cats[1] == "paralyze":
+                            pokeDefender.status = "paralyze"
+                            print(pokeDefender.poke["name"]+" has been paralyzed!")
+                            pokeDefender.statUpdate("+paralyze",defBadge)
+                        elif (cats[1] == 'toxic'):
+                            pokeDefender.status = "poison"
+                            print(pokeDefender.poke["name"]+" has been badly poisoned!")
+                            pokeDefender.turncount["toxic"] = 1
+                    else:
+                        print("The move failed!")
             else:
                 if pokeDefender.confused:
                     print(pokeDefender.poke["name"]+" is already confused!")
@@ -218,27 +221,28 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,attBadge,defBadge
                             # this means the move has a chance to inflict a status
                             if cats[2] not in ['confuse','flinch']:
                                 # this is a standard status condition (sleep, par, burn, poison)
-                                if pokeDefender.status == "none":
-                                    # only actually effects the enemy if they aren't already statused
-                                    # paralysis, poison and burn last forever. sleep lasts 1-7 turns.
-                                    if cats[2] == 'sleep':
-                                        pokeDefender.turncount["sleep"] = random.randint(1,7)
-                                        pokeDefender.status = "sleep"
-                                        print(pokeDefender.poke["name"]+" has been put to sleep!")
-                                    elif (cats[2] == 'freeze') and ("ice" not in pokeDefender.poke["types"]):
-                                        pokeDefender.status = "freeze"
-                                        print(pokeDefender.poke["name"]+" has been frozen!")
-                                    elif (cats[2] == 'poison') and ("poison" not in pokeDefender.poke["types"]):
-                                        pokeDefender.status = "poison"
-                                        print(pokeDefender.poke["name"]+" has been poisoned!")
-                                    elif (cats[2] == 'burn') and ("fire" not in pokeDefender.poke["types"]):
-                                        pokeDefender.status = "burn"
-                                        pokeDefender.statUpdate("+burn",defBadge)
-                                        print(pokeDefender.poke["name"]+" has been burned!")
-                                    elif cats[2] == "paralyze":
-                                        pokeDefender.status = "paralyze"
-                                        pokeDefender.statUpdate("+paralyze",defBadge)
-                                        print(pokeDefender.poke["name"]+" has been paralyzed!")
+                                if move["type"] not in pokeDefender.types:
+                                    if pokeDefender.status == "none":
+                                        # only actually effects the enemy if they aren't already statused
+                                        # paralysis, poison and burn last forever. sleep lasts 1-7 turns.
+                                        if cats[2] == 'sleep':
+                                            pokeDefender.turncount["sleep"] = random.randint(1,7)
+                                            pokeDefender.status = "sleep"
+                                            print(pokeDefender.poke["name"]+" has been put to sleep!")
+                                        elif (cats[2] == 'freeze'):
+                                            pokeDefender.status = "freeze"
+                                            print(pokeDefender.poke["name"]+" has been frozen!")
+                                        elif (cats[2] == 'poison'):
+                                            pokeDefender.status = "poison"
+                                            print(pokeDefender.poke["name"]+" has been poisoned!")
+                                        elif (cats[2] == 'burn'):
+                                            pokeDefender.status = "burn"
+                                            pokeDefender.statUpdate("+burn",defBadge)
+                                            print(pokeDefender.poke["name"]+" has been burned!")
+                                        elif cats[2] == "paralyze":
+                                            pokeDefender.status = "paralyze"
+                                            pokeDefender.statUpdate("+paralyze",defBadge)
+                                            print(pokeDefender.poke["name"]+" has been paralyzed!")
                             elif cats[2] == 'confuse':
                                 if not pokeDefender.confused:
                                     #only works if pokemon not already confused, of course
