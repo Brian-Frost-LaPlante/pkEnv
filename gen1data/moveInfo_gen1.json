@@ -912,7 +912,7 @@
             "explanation": "A FIRE-type attack that lasts two to five turns. The target cannot move while surrounded by flames.",
             "tm number": 0,
             "hm number": 0,
-            "category": "firespin"
+            "category": "bindlike"
 
         },
         {

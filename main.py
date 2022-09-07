@@ -24,7 +24,7 @@ with open("gen1data/typeInfo_gen1.json") as jsonFile:
 name = "Alakazam"
 stats = [10000,198,188,368,1]
 level = 100
-moves = ["fly","body slam","conversion","rest"]
+moves = ["hyper beam","body slam","mirror move","rest"]
 pk1 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 #pk1.confused = True
 #pk1.turncount["confused"] = 2
@@ -33,7 +33,7 @@ pk1 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveL
 name = "Pidgey"
 stats = [10000,138,128,308,278]
 level = 100
-moves = ["growl","dig","body slam" ,"leech seed"]
+moves = ["hyper beam","metronome","razor wind" ,"mirror move"]
 pk2 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 pk2.wall = ["reflect"]
 
@@ -52,7 +52,7 @@ pk3 = Pokemon(name,level,stats,stats[0],moves,[5,5,5,5],[5,5,5,5],pokemonList,mo
 
 player = Trainer("brian",[pk1],["another","more","some others"],[1,1,1,1])
 enemy = Trainer("kevin",[pk2,pk3],["briantime XP"],[1,1,1,0])
-battle = Battle(player,enemy,typeList)
+battle = Battle(player,enemy,typeList,moveList)
 #playerOptions = battle.options(player)
 #enemyOptions = battle.options(enemy)
 #print(battle.enemy.team[0].HP)

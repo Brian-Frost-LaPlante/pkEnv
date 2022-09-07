@@ -51,6 +51,96 @@ class Battle:
                 print(pokeChar.poke["name"]+"'s "+pokeChar.disable+" is no longer disabled!")
                 pokeChar.disable = ""
 
+    def metronome(self,pokeAttacker,pokeDefender,moveAddress,attacker,defender):
+        # metronome will do something strange -- it will pick a random move (other than metronome) and then execute that move. To use the parse attack function as written, we first switch out the move in its own moveset, then change it back to metronome after the attack is carried out.
+
+        # if a twoturn move was used by metronome
+        if pokeAttacker.buffer != "":
+            for i in range(len(self.moveInfo["moves"])):
+                if self.moveInfo["moves"][i]["name"].casefold()=="metronome":
+                    metronomeMove = self.moveInfo["moves"][i]
+            moveToUse = pokeAttacker.buffer
+            print(pokeAttacker.poke["name"]+ " is attacking with "+ moveToUse["name"]+"!")
+            pokeAttacker.moveset[moveAddress] = moveToUse #briefly make the move different
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            pokeAttacker.moveset[moveAddress] = metronomeMove
+            pokeAttacker.buffer = ""
+            return result
+
+        moveList = []
+        for i in range(len(self.moveInfo["moves"])):
+            if self.moveInfo["moves"][i]["name"]!="Metronome":
+                moveList.append(self.moveInfo["moves"][i])
+            else:
+                metronomeMove = self.moveInfo["moves"][i]
+        moveToUse = random.sample(moveList,1)[0]
+        pokeAttacker.moveset[moveAddress] = moveToUse #briefly make the move different
+        print("Metronome landed on "+moveToUse["name"]+"!")
+        # must handle counter and twoturn moves differently
+        if moveToUse["name"] == "Counter":
+            print("The move did nothing!")
+            return ""
+        elif moveToUse["category"] == "twoturn":
+            pokeAttacker.buffer = moveToUse
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            pokeAttacker.moveset[moveAddress] = metronomeMove
+        else:
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            # now bring metronome back
+            pokeAttacker.moveset[moveAddress] = metronomeMove
+            if result not in ["fail:confuse","fail:paralyze"]:
+                pokeDefender.mirrorable = "metronome"
+            return result
+
+    def mirrormove(self,pokeAttacker,pokeDefender,moveAddress,attacker,defender):
+        # mirror move will do something strange -- it will try to use  and then execute that move. To use the parse attack function as written, we first switch out the move in its own moveset, then change it back to metronome after the attack is carried out.
+ 
+        # if a twoturn move was used by mirror move
+        if pokeAttacker.buffer != "":
+            for i in range(len(self.moveInfo["moves"])):
+                if self.moveInfo["moves"][i]["name"].casefold()=="mirror move":
+                    mirrormoveMove = self.moveInfo["moves"][i]
+            moveToUse = pokeAttacker.buffer
+            print(pokeAttacker.poke["name"]+ " is attacking with "+ moveToUse["name"]+"!")
+            pokeAttacker.moveset[moveAddress] = moveToUse #briefly make the move different
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            pokeAttacker.moveset[moveAddress] = mirrormoveMove
+            pokeAttacker.buffer = ""
+            return result       
+        
+        for i in range(len(self.moveInfo["moves"])):
+            if self.moveInfo["moves"][i]["name"].casefold()==pokeAttacker.mirrorable.casefold():
+                moveToUse = self.moveInfo["moves"][i]
+            if self.moveInfo["moves"][i]["name"].casefold()=="mirror move":
+                mirrormoveMove = self.moveInfo["moves"][i]
+        if pokeAttacker.mirrorable == "":
+            moveToUse = mirrormoveMove
+        pokeAttacker.moveset[moveAddress] = moveToUse #briefly make the move different
+        
+        if moveToUse["name"].casefold() == "metronome":
+            result = self.metronome(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
+            pokeAttacker.moveset[moveAddress] = mirrormoveMove
+            return result
+
+        elif moveToUse["category"] == "twoturn":
+            pokeAttacker.buffer = moveToUse
+            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            pokeAttacker.moveset[moveAddress] = mirrormoveMove
+            return result
+
+        if moveToUse["name"].casefold() != "mirror move":
+            print(pokeAttacker.poke["name"] + " is trying to mirror "+moveToUse["name"]+"!")
+        
+        result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+        # now bring mirror move back, so long as charging is over
+        pokeAttacker.moveset[moveAddress] = mirrormoveMove
+        if result not in ["fail:confuse","fail:paralyze"]:
+            pokeDefender.mirrorable = "mirror move"
+
+ 
+        return result
+
+
 
     def statusCheck(self,character,pokeChar,pokeNot):
         loss = False
@@ -98,6 +188,7 @@ class Battle:
 
 
     def attackPhase(self,optionPlayer,optionEnemy):
+        # a strange turn will occur if one of the characters is recharging.
         # bools for which player is attacking.
         # handled differently if one or both attack.
         playerIs = optionPlayer[0]=="attack"
@@ -125,7 +216,12 @@ class Battle:
             # check if attack will land
             if pokeAttacker.status not in ["sleep","freeze"]:
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
+            if pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move","Metronome"]:
+                result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            elif pokeAttacker.moveset[moveAddress]["name"] == "Metronome":
+                result = self.metronome(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
+            elif pokeAttacker.moveset[moveAddress]["name"] == "Mirror Move":
+                result = self.mirrormove(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
             #handle the case where either player's pokemon has fainted
             [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
             if lossAttacker:
@@ -207,11 +303,15 @@ class Battle:
             pokeDefender=defender.team[0]
             if pokeAttacker.status not in ["sleep","freeze"]:
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-            result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
 
+            if pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move","Metronome"]:
+                result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+            elif pokeAttacker.moveset[moveAddress]["name"] == "Metronome":
+                result = self.metronome(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
+            elif pokeAttacker.moveset[moveAddress]["name"] == "Mirror Move":
+                result = self.mirrormove(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
 
-
-            # check for possible losses or deaths
+# check for possible losses or deaths
             [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
             if lossAttacker:
                 if lossDefender:
@@ -248,7 +348,13 @@ class Battle:
                 if not pokeAttacker.flinching:
                     if pokeAttacker.status not in ["sleep","freeze"]:
                         print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-                    result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,attacker.badges,defender.badges)
+                    if pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move", "Metronome"]:
+                        result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
+                    elif pokeAttacker.moveset[moveAddress]["name"] == "Metronome":
+                        result = self.metronome(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
+                    elif pokeAttacker.moveset[moveAddress]["name"] == "Mirror Move":
+                        result = self.mirrormove(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
+
                     [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
                     if lossAttacker:
                         if lossDefender:
@@ -299,17 +405,17 @@ class Battle:
         if firstToSwitch:
             if first == "player":
                 print(self.player.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.player)
+                self.swapIn(self.player,self.enemy)
             else:
                 print(self.enemy.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.enemy)
+                self.swapIn(self.enemy,self.player)
         if secondToSwitch:
             if second == "player":
                 print(self.player.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.player)
+                self.swapIn(self.player,self.enemy)
             else:
                 print(self.enemy.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.enemy)
+                self.swapIn(self.enemy,self.player)
         return ""
 
     def checkResult(self,result,attacker,defender):
@@ -373,7 +479,7 @@ class Battle:
                 print(defender.name+" has lost the battle!")
         return [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]
 
-    def swapIn(self,character):
+    def swapIn(self,character,opposite):
         options = []
         for i in range(len(character.team)):
             if character.team[i].status != "faint":
@@ -395,13 +501,16 @@ class Battle:
         
         print(character.name+" is sending in "+character.team[option].poke["name"])
         character.team[0].statReset()
+        character.team[0].mirrored=""
+        opposite.team[0].mirrored=""
+
         character.team[0], character.team[option] = character.team[option], character.team[0]
         character.team[0].statUpdate("send",character.badges)
         return ""
 
     def pickOptions(self,character):
         validChoice = False
-        if character.team[0].charging == -1:
+        if (character.team[0].charging == -1) and (not character.team[0].recharging):
             while not validChoice:
                 print(character.name+"'s Options")
                 print("[1] ATTACK     [2] ITEM     [3] SWAP")
@@ -457,8 +566,10 @@ class Battle:
                                 print("That is not a valid choice!")
                             elif int(option) != 0:
                                 return ["swap",int(option)]
-        else:
+        elif character.team[0].charging != -1:
             return ["attack",character.team[0].charging]
+        elif character.team[0].recharging:
+            return ["recharge"]
         return
 
     def turn(self,optionPlayer,optionEnemy):
@@ -471,12 +582,25 @@ class Battle:
         if optionTypePlayer == "swap":
             print(self.player.name+" is swapping out "+self.player.team[0].poke["name"]+" and is sending in "+self.player.team[optionPlayer[1]].poke["name"])
             self.player.team[0].statReset()
+            if self.player.team[0].mimic_on != -1:
+                for i in len(moveInfo["moves"]):
+                    if moveInfo["moves"][i]["name"] == "Mimic":
+                        mimic = moveInfo["moves"][i]
+                self.player.team[0].moveset[mimic_on] = mimic
+                self.player.team[0].mimic_on = -1
+
             self.player.team[0], self.player.team[optionPlayer[1]] = self.player.team[optionPlayer[1]], self.player.team[0]
             self.player.team[0].statUpdate("send",self.player.badges)
             self.guiUpdate()
         if optionTypeEnemy == "swap":
             print(self.enemy.name+" is swapping out "+self.enemy.team[0].poke["name"]+" and is sending in "+self.enemy.team[optionEnemy[1]].poke["name"])
             self.enemy.team[0].statReset()
+            if self.enemy.team[0].mimic_on != -1:
+                for i in len(moveInfo["moves"]):
+                    if moveInfo["moves"][i]["name"] == "Mimic":
+                        mimic = moveInfo["moves"][i]
+                self.enemy.team[0].moveset[mimic_on] = mimic
+                self.enemy.team[0].mimic_on = -1
             self.enemy.team[0], self.enemy.team[optionEnemy[1]] = self.enemy.team[optionEnemy[1]], self.enemy.team[0]
             self.enemy.team[0].statUpdate("send",self.enemy.badges)
             self.guiUpdate()
@@ -490,9 +614,28 @@ class Battle:
         # attacks happen next
         if optionTypeEnemy == "attack" or optionTypePlayer == "attack":
             isOver = self.attackPhase(optionPlayer,optionEnemy)
+            if (optionTypeEnemy == "recharge") and (self.enemy.team[0].recharging>0) and (self.enemy.team[0].HP !=0):
+                self.enemy.team[0].recharging = self.enemy.team[0].recharging - 1
+                if self.enemy.team[0].recharging == 0:
+                    print(self.enemy.team[0].poke["name"]+" is recharging from its Hyper Beam!")
+            if (optionTypePlayer == "recharge") and (self.player.team[0].recharging>0) and (self.player.team[0].HP !=0):
+                self.player.team[0].recharging = self.player.team[0].recharging - 1
+                if self.player.team[0].recharging == 0:
+                    print(self.player.team[0].poke["name"]+" is recharging from its Hyper Beam!")
             self.guiUpdate()
+        # recharging will occur after the turn if necessary
         else:
-            #in this case, we have to check status conditions separately
+            #in this case, we have to check status conditions separatelyif (optionTypeEnemy == "recharge") and (self.enemy.team[0].recharging>0) and (self.enemy.team[0].HP !=0):
+            if (optionTypeEnemy == "recharge") and (self.enemy.team[0].recharging>0) and (self.enemy.team[0].HP !=0):
+                self.enemy.team[0].recharging = self.enemy.team[0].recharging - 1
+                if self.enemy.team[0].recharging == 0:
+                    print(self.enemy.team[0].poke["name"]+" is recharging from its Hyper Beam!")
+            if (optionTypePlayer == "recharge") and (self.player.team[0].recharging>0) and (self.player.team[0].HP !=0):
+                self.player.team[0].recharging = self.player.team[0].recharging - 1
+                if self.player.team[0].recharging == 0:
+                    print(self.player.team[0].poke["name"]+" is recharging from its Hyper Beam!")
+            self.guiUpdate()
+
             [lossPlayer,playerToSwitch] = self.statusCheck(self.player,self.player.team[0],self.enemy.team[0])
             [lossEnemy,enemyToSwitch] = self.statusCheck(self.enemy,self.enemy.team[0],self.player.team[0])
             self.guiUpdate()
@@ -509,10 +652,10 @@ class Battle:
             
             if playerToSwitch:
                 print(self.player.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.player)
+                self.swapIn(self.player,self.enemy)
             if enemyToSwitch:
                 print(self.enemy.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.enemy)
+                self.swapIn(self.enemy,self.player)
         return isOver
 
     def guiUpdate(self): 
@@ -535,15 +678,16 @@ class Battle:
         self.label_stats_p2.configure(text="ATT:  "+str(playerpoke.attack)+"\nDEF:  "+str(playerpoke.defense)+"\nSPEC: "+str(playerpoke.special)+"\nSPD:  "+str(playerpoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
 
 
-    def __init__(self,player,enemy,typeInfo):
+    def __init__(self,player,enemy,typeInfo,moveInfo):
         self.typeInfo = typeInfo
+        self.moveInfo = moveInfo
         self.player = player
         self.enemy = enemy
 
         ### GUI INITIALIZATION
         root = Tk()
         root.title('Battle')
-        root.geometry('250x150')
+        root.geometry('450x200')
         root.configure(background = "white")
         root.resizable(False, False)
         options = {'padx': 5, 'pady': 5}

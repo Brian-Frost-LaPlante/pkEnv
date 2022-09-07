@@ -1,23 +1,18 @@
-Freeze 99 PP glitch and horrible two-hit haze glitch
+Freeze/hyperbeam/metronome/bind hyper beam PP rollover glitches
+horrible two-hit haze glitch
 struggle implementation (including with disable)
 
 items
 
 moves to do:
 
-transform
-hyperbeam
-counter
-rage
-mimic
 bide
-metronome
-substitute
-firespin
-mirrormove
-bindlike
 thrashlike
+bindlike
+rage
+counter
 transform
+substitute
 
 implemented move categories:
 damage: standard
@@ -44,3 +39,7 @@ leechseed
 twoturn
 dig
 fly
+metronome
+hyperbeam
+mimic
+mirrormove
