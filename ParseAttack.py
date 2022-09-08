@@ -21,9 +21,12 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
     if cats[0] == "bide":
         # bide works in a funny way, completely dismissing most accuracy checks. on the turn it is used, it can fail.
         # sleep/freeze only pause the counter
+        pokeAttacker.bideUsed = moveAddress
         accResult = accuracyCheck(pokeAttacker,pokeDefender,moveAddress)
         if accResult == "fail:sleep":
             return "sleep"
+        elif accResult == "fail:bind":
+            return "bind"
         elif accResult == "fail:freeze":
             print(pokeAttacker.poke["name"] + " is frozen and can't move!")
             return "freeze"
@@ -34,32 +37,249 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                 print(pokeAttacker.poke["name"]+" is paralyzed and can't move!")
                 pokeAttacker.whereIs = "field"
                 return ""
+            if accResult == "fail:confuse":
+                print(pokeAttacker.poke["name"]+" hit itself in confusion!")
+                damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
+                pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
+                pokeAttacker.setStats()
+                # interestingly, confuse damage counts as last damage done
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+
+                pokeAttacker.whereIs = "field"
+                print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
+                if pokeAttacker.HP == 0:
+                    print(pokeAttacker.poke["name"]+" has fainted!")
+                    return "attacker:faint"
+                else:
+                    return ""
+
             print(pokeAttacker.poke["name"] + " started storing up energy!")
             pokeAttacker.turncount["bide"] = random.sample([2,3],1)[0]
-
+            return ""
         elif pokeAttacker.turncount["bide"] == 0:
             print(pokeAttacker.poke["name"] + " is unleashing its energy!")
             damage = min(pokeDefender.HP,2*pokeAttacker.bideDamage)
             pokeDefender.activeStats[0] = pokeDefender.HP-damage
             pokeDefender.setStats()
+            pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
+            pokeAttacker.bideDamage = 0
+
             print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
             if pokeDefender.HP == 0:
                 print(pokeDefender.poke["name"]+" has fainted!")
                 return "defender:faint"
             
-            pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
-            pokeAttacker.bideDamage = 0
+            return ""
 
         else:
             print(pokeAttacker.poke["name"] + " is storing up energy!")
             pokeAttacker.bideDamage = pokeAttacker.bideDamage + pokeAttacker.lastDamage[0]
             pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
+            return ""
+        return ""
+
+    if cats[0] == "thrashlike":
+        pokeAttacker.thrashUsed = moveAddress
+        # bide works in a funny way, dismissing most accuracy checks after it begins. on the turn it is used, it can fail.
+        # sleep/freeze only pause the counter
+        accResult = accuracyCheck(pokeAttacker,pokeDefender,moveAddress)
+        if accResult == "fail:sleep":
+            # pokeAttacker.turncount PAUSES
+            return "sleep"
+        elif accResult == "fail:bind":
+            return "bind"
+        elif accResult == "fail:freeze":
+            print(pokeAttacker.poke["name"] + " is frozen and can't move!")
+            # pokeAttacker.turncount PAUSES
+            return "freeze"
+        
+        elif accResult == "fail:paralyze":
+            print(pokeAttacker.poke["name"]+" is paralyzed and can't move!")
+            pokeAttacker.whereIs = "field"
+            # thrash ENDS
+            pokeAttacker.turncount["thrash"] = -1
+            return ""
+
+        elif accResult == "fail:confuse":
+            # thrash ENDS
+            pokeAttacker.turncount["thrash"] = -1
+            print(pokeAttacker.poke["name"]+" hit itself in confusion!")
+            damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
+            pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
+            pokeAttacker.setStats()
+            # interestingly, confuse damage counts as last damage done
+            pokeDefender.lastDamage[0] = damage
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+
+            pokeAttacker.whereIs = "field"
+            print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
+            if pokeAttacker.HP == 0:
+                print(pokeAttacker.poke["name"]+" has fainted!")
+                return "attacker:faint"
+            else:
+                return ""
 
 
-    # first, do an accuracy check to see if confusion, paralysis, freeze, or just plain missing stops the pokemon
+        # thrash attacks for 3-4 turns
+        if pokeAttacker.turncount["thrash"] == -1:
+            pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+            # on this turn, par/confusion/missing matters.
+            if accResult == "fail:sky":
+                print(pokeAttacker.poke["name"]+" can't hit a Pokemon in the air!")
+                pokeDefender.lastDamage[0] = 0
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+                return ""
+            elif accResult == "fail:underground":
+                print(pokeAttacker.poke["name"]+" can't hit a Pokemon underground!")
+                pokeDefender.lastDamage[0] = 0
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+                return ""
+            elif accResult == "fail:miss":
+                print(pokeAttacker.poke["name"]+" missed!")
+                pokeDefender.lastDamage[0] = 0
+                return ""
+            elif (pokeAttacker.moveset[moveAddress]["type"].casefold() in ["normal","fighting"]) and ("ghost" in pokeDefender.poke["types"]):
+                print("That move does not affect Ghosts!")
+                pokeDefender.lastDamage[0] = 0
+                return ""
+            # Otherwise, it begins!
+            print(pokeAttacker.poke["name"] + " started thrashing about!")
+            # 3-4 turns, counting this one, so really 2-3 "more" turns
+            pokeAttacker.turncount["thrash"] = random.sample([1,2],1)[0]
+            damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+            pokeDefender.activeStats[0] = pokeDefender.HP-damage
+            pokeDefender.setStats()
+            print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+            pokeDefender.lastDamage[0] = damage
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            if pokeDefender.HP == 0:
+                print(pokeDefender.poke["name"]+" has fainted!")
+                return "defender:faint"
+            return ""
+        else:
+            print(pokeAttacker.poke["name"] + " is thrashing about!")
+            if accResult == "fail:sky":
+                print(pokeAttacker.poke["name"]+" can't hit a Pokemon in the air!")
+                pokeAttacker.turncount["thrash"] = pokeAttacker.turncount["thrash"]-1
+                pokeDefender.lastDamage[0] = 0
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            elif accResult == "fail:underground":
+                print(pokeAttacker.poke["name"]+" can't hit a Pokemon underground!")
+                pokeAttacker.turncount["thrash"] = pokeAttacker.turncount["thrash"]-1
+                pokeDefender.lastDamage[0] = 0
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            else:
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                pokeAttacker.turncount["thrash"] = pokeAttacker.turncount["thrash"]-1
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            if pokeAttacker.turncount["thrash"] == -1:
+                # when thrash ends, we get confused
+                print(pokeAttacker.poke["name"] + " has stopped thrashing about!")
+                if not pokeAttacker.confused: # the pokemon becomes confused if not already confused
+                    pokeAttacker.confused = True
+                    pokeAttacker.turncount["confused"] = random.randint(1,4)
+                    print(pokeAttacker.poke["name"]+" is now confused!")
+            if pokeDefender.HP == 0:
+                print(pokeDefender.poke["name"]+" has fainted!")
+                return "defender:faint"
+        return ""
+
+    if cats[0] == "bindlike":
+        pokeAttacker.bindUsed = moveAddress
+
+        # very complicated. If the pokemon we are up against has not been bound 
+        # (either because it was just switched in or just bind hasnt started), we use bind anew
+        if pokeDefender.turncount["bound"] == -1:
+            accResult = accuracyCheck(pokeAttacker,pokeDefender,moveAddress)
+            if accResult == "fail:sleep":
+                return "sleep"
+            elif accResult == "fail:freeze":
+                print(pokeAttacker.poke["name"] + " is frozen and can't move!")
+                return "freeze"
+            
+            elif accResult == "fail:paralyze":
+                print(pokeAttacker.poke["name"]+" is paralyzed and can't move!")
+                pokeAttacker.whereIs = "field"
+                return ""
+            elif accResult == "fail:bind":
+                return "bind"
+            elif accResult == "fail:confuse":
+                # thrash ENDS
+                pokeAttacker.turncount["thrash"] = -1
+                print(pokeAttacker.poke["name"]+" hit itself in confusion!")
+                damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
+                pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
+                pokeAttacker.setStats()
+                # interestingly, confuse damage counts as last damage done
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+
+                pokeAttacker.whereIs = "field"
+                print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
+                if pokeAttacker.HP == 0:
+                    print(pokeAttacker.poke["name"]+" has fainted!")
+                    return "attacker:faint"
+                else:
+                    return ""
+
+            # apply bind , even if PP is 0! this causes an underflow
+            roll = random.randint(0,63)
+            if roll < 24:
+                # bind will last two turn 
+                pokeDefender.turncount["bound"] = 1
+                pokeAttacker.turncount["binding"] = 1
+            elif roll < 48:
+                pokeDefender.turncount["bound"] = 2
+                pokeAttacker.turncount["binding"] = 2
+            elif roll < 56:
+                pokeDefender.turncount["bound"] = 3
+                pokeAttacker.turncount["binding"] = 3
+            elif roll < 64:
+                pokeDefender.turncount["bound"] = 4
+                pokeAttacker.turncount["binding"] = 4
+            print(pokeAttacker.poke["name"] + " has trapped its opponent!")
+            # whatever damage the move does on its firt turn, it will continue to do.
+            pokeAttacker.bindDamage = damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo)
+            damage = min(pokeDefender.HP,pokeAttacker.bindDamage)
+            pokeDefender.activeStats[0] = pokeDefender.HP-damage
+            pokeDefender.setStats()
+            print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+            pokeDefender.lastDamage[0] = damage
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            if pokeDefender.HP == 0:
+                print(pokeDefender.poke["name"]+" has fainted!")
+                # in this case, the binding period is reset
+                pokeAttacker.turncount["binding"] = -1
+                pokeAttacker.turncount["bound"] = -1
+                return "defender:faint"
+        else:
+            print(pokeAttacker.poke["name"]+"'s trap continues.")
+            damage = min(pokeDefender.HP,pokeAttacker.bindDamage)
+            pokeDefender.activeStats[0] = pokeDefender.HP-damage
+            pokeDefender.setStats()
+            print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+            pokeDefender.lastDamage[0] = damage
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            if pokeDefender.HP == 0:
+                print(pokeDefender.poke["name"]+" has fainted!")
+                # in this case, the binding period is reset
+                pokeAttacker.turncount["binding"] = -1
+                pokeAttacker.turncount["bound"] = -1
+                return "defender:faint"
+        return ""
+
+
+    #now for other moves first, do an accuracy check to see if confusion, paralysis, freeze, or just plain missing stops the pokemon
     accResult = accuracyCheck(pokeAttacker,pokeDefender,moveAddress)
     if accResult == "fail:sleep":
         return "sleep"
+    elif accResult == "fail:bind":
+        return "bind"
     elif accResult == "fail:confuse":
         print(pokeAttacker.poke["name"]+" hit itself in confusion!")
         damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))

@@ -3,6 +3,16 @@ import math
 from Stage2Mult import stage2Mult
 def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
     moveResult = "success"
+    if pokeAttacker.turncount["bound"]!=-1:
+        # so long as the binding opponent hasn't swapped out
+        if pokeDefender.turncount["binding"]!=-1:
+            print("The Pokemon is bound!")
+            pokeAttacker.turncount["bound"] = pokeAttacker.turncount["bound"]-1
+            pokeDefender.turncount["binding"] = pokeDefender.turncount["binding"]-1
+            if pokeAttacker.turncount["bound"] == -1:
+                print(pokeAttacker.poke["name"] + " has broken free!")
+                pokeDefender.turncount["binding"] == -1
+        return "fail:bind"
     if pokeAttacker.status == "sleep":
             pokeAttacker.turncount["sleep"] = pokeAttacker.turncount["sleep"]-1
             if pokeAttacker.turncount["sleep"] > 0:
@@ -37,7 +47,11 @@ def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
     accRoll = random.randint(0,255)
     if pokeAttacker.moveset[moveAddress]["name"] == "Swift":
         # Swift can fail due to confusion or paralysis or gen 1 miss - nothing else
-        pokeAttacker.PP[moveAddress]=pokeAttacker.PP[moveAddress]-1             
+        if pokeAttacker.moveset[len(pokeAttacker.moveset)-1]["name"]!="Struggle":
+            pokeAttacker.PP[moveAddress]=pokeAttacker.PP[moveAddress]-1    
+            if pokeAttacker.PP[moveAddress]<0:
+                pokeAttacker.PP[moveAddress] = 63         
+                # PP ups also applied. May have to do this later
         if accRoll==255:
             return "fail:miss"
         else:
@@ -51,5 +65,11 @@ def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
         moveResult = "fail:"+pokeDefender.whereIs 
     elif acc<=accRoll:
         moveResult = "fail:miss"    
-    pokeAttacker.PP[moveAddress]=pokeAttacker.PP[moveAddress]-1
+    if (pokeAttacker.turncount["bide"]==-1) and (pokeAttacker.turncount["thrash"]==-1):
+        # bide/thrash PP only decreases on first turn
+        if pokeAttacker.moveset[len(pokeAttacker.moveset)-1]["name"]!="Struggle":
+            pokeAttacker.PP[moveAddress]=pokeAttacker.PP[moveAddress]-1
+            if pokeAttacker.PP[moveAddress]<0:
+                pokeAttacker.PP[moveAddress] = 63
+                # PP Ups also applied. May have to do this later
     return moveResult

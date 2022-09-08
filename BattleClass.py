@@ -140,8 +140,6 @@ class Battle:
  
         return result
 
-
-
     def statusCheck(self,character,pokeChar,pokeNot):
         loss = False
         toSwitch = False
@@ -166,17 +164,17 @@ class Battle:
                 pokeNot.activeStats[0] = pokeNot.HP+leechHeal
                 pokeNot.setStats()
                 print(pokeNot.poke["name"] + " healed "+str(leechHeal)+ " from Leech Seed!")
-            
+
         if pokeChar.HP == 0:
             pokeChar.status = "faint"
-            print(pokeChar.poke["name"]+" has fainted!")
+            #print(pokeChar.poke["name"]+" has fainted!")
             options = []
             for i in range(len(character.team)):
                 if character.team[i].status != "faint":
                     options.append(i)
             if options == []:
-                print(character.name + " has no Pokemon left to battle.")
-                print(character.name + " has lost the battle!")
+                #print(character.name + " has no Pokemon left to battle.")
+                #print(character.name + " has lost the battle!")
                 loss = True
             else:
                 toSwitch = True
@@ -214,7 +212,7 @@ class Battle:
             pokeAttacker=attacker.team[0]
             pokeDefender=defender.team[0]
             # check if attack will land
-            if pokeAttacker.status not in ["sleep","freeze"]:
+            if (pokeAttacker.status not in ["sleep","freeze"]) and (pokeAttacker.turncount["bound"]==-1):
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
             if pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move","Metronome"]:
                 result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
@@ -255,7 +253,7 @@ class Battle:
             # 5) if yes, determine the effect of the second move
             firstStatusChecked = False
             playerMove = self.player.team[0].moveset[optionPlayer[1]]
-            enemyMove  = self.enemy.team[0].moveset[optionPlayer[1]]
+            enemyMove  = self.enemy.team[0].moveset[optionEnemy[1]]
             prio = [0,0]
             if (playerMove["name"] == "Quick Attack"):
                 prio[0] = 1
@@ -301,7 +299,7 @@ class Battle:
                 defender=self.player
             pokeAttacker=attacker.team[0]
             pokeDefender=defender.team[0]
-            if pokeAttacker.status not in ["sleep","freeze"]:
+            if  (pokeAttacker.status not in ["sleep","freeze"]) and (pokeAttacker.turncount["bound"]==-1):
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
 
             if (playerMove["name"] == "Counter") and (enemyMove["name"] == "Counter"):
@@ -325,7 +323,7 @@ class Battle:
             elif lossDefender:
                 return "loss:"+second
             # poison and burn damage apply if neither player's pokemon fainted, take status damage and check again
-            if (not (firstToSwitch or secondToSwitch)) and (pokeAttacker.status in ["poison","burn"]):
+            if not (firstToSwitch or secondToSwitch):
                 [lossAttacker,firstToSwitch] = self.statusCheck(attacker,pokeAttacker,pokeDefender)
                 firstStatusChecked = True # if not, we have to check at the end of the turn
                 if lossAttacker:
@@ -350,7 +348,7 @@ class Battle:
                 pokeAttacker=attacker.team[0]
                 pokeDefender=defender.team[0]
                 if not pokeAttacker.flinching:
-                    if pokeAttacker.status not in ["sleep","freeze"]:
+                    if  (pokeAttacker.status not in ["sleep","freeze"]) and (pokeAttacker.turncount["bound"]==-1):
                         print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
                     if (playerMove["name"] == "Counter") and (enemyMove["name"] == "Counter"):
                         print("Counter failed!")
@@ -363,7 +361,7 @@ class Battle:
                     elif pokeAttacker.moveset[moveAddress]["name"] == "Mirror Move":
                         result = self.mirrormove(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
 
-                    [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
+                    [secondToSwitch,firstToSwitch,lossAttacker,lossDefender]=self.checkResult(result,attacker,defender)
                     if lossAttacker:
                         if lossDefender:
                             return "loss:both"
@@ -374,7 +372,7 @@ class Battle:
                 else:
                     print(pokeAttacker.poke["name"] + " flinched!")
                     pokeAttacker.flinching=False
-
+                
                 # status gets checked here so long as the pokemon didn't faint or knock out its opponent
                 if not (secondToSwitch or (result == "defender:faint")):
                     if result not in ["sleep","freeze","flinch"]:
@@ -407,7 +405,6 @@ class Battle:
                 [lossDefender,firstToSwitch] = self.statusCheck(defender,pokeDefender,pokeAttacker)
                 if lossDefender:
                     return "loss:"+first       
-
 
 
         if firstToSwitch:
@@ -476,15 +473,15 @@ class Battle:
                 lossAttacker = True
             else:
                 firstToSwitch = True
-            if lossAttacker:
-                if lossDefender:
+            #if lossAttacker:
+                #if lossDefender:
                     # a draw
-                    print("Both players have lost the battle!")
-                else:
-                    print(attacker.name+" has lost the battle!")
+                #    print("Both players have lost the battle!")
+                #else:
+                    #print(attacker.name+" has lost the battle!")
 
-            elif lossDefender:
-                print(defender.name+" has lost the battle!")
+            #elif lossDefender:
+                #print(defender.name+" has lost the battle!")
         return [firstToSwitch,secondToSwitch,lossAttacker,lossDefender]
 
     def swapIn(self,character,opposite):
@@ -527,16 +524,37 @@ class Battle:
                 macroOption = input()
                 if macroOption not in ['1','2','3']:
                     print("That is not a valid choice!")
+
+                elif (character.team[0].turncount["thrash"] != -1) and macroOption == '3':
+                    print("A thrashing Pokemon cannot swap out!")
+
                 elif macroOption == '1':
-                    # if the pokemon is using bide, we continue using bide
+                    # if the pokemon is using bide or a thrashlike move, we continue using bide
                     attacks = character.team[0].moveset
 
                     if character.team[0].turncount["bide"] != -1:
-                        for a in range(len(attacks)):
-                            if attacks[a]["name"].casefold() == "bide":
-                                return ["attack",a]
-                    
-                    
+                        return ["attack",character.team[0].bideUsed]
+                    if character.team[0].turncount["thrash"] != -1:
+                        return ["attack",character.team[0].thrashUsed]
+                    if character.team[0].turncount["binding"] != -1:
+                        return ["attack",character.team[0].bindUsed]
+
+                    # if the pokemon has no moves left to use, either because of disable or PP, it's STRUGGLE time
+                    struggleTime = True
+                    for a in range(len(attacks)):
+                        if (attacks[a]["name"] != character.team[0].disable) and (character.team[0].PP[a] != 0):
+                            # if at least one move is not disabled and is not out of PP, no need to struggle
+                            struggleTime = False
+                    if struggleTime:
+                        print("The pokemon must struggle!")
+                        for i in range(len(self.moveInfo["moves"])):
+                            if self.moveInfo["moves"][i]["name"] == "Struggle":
+                                struggle = self.moveInfo["moves"][i]   
+                        if character.team[0].moveset[len(character.team[0].moveset)-1]!=struggle:
+                            character.team[0].moveset.append(struggle)
+                            character.team[0].PP.append(0)
+                        return ["attack",len(character.team[0].moveset)-1]
+                        
                     for i in range(len(attacks)):
                         print("["+str(i+1)+"]     "+attacks[i]["name"])
                     option = input()   
@@ -551,40 +569,40 @@ class Battle:
                             print("That move has no PP!")
                         else:
                             return ["attack",int(option)-1]
-                    elif macroOption == '2':
-                        items = character.items
-                        if len(items) == 0:
-                            print("You have no items!")
-                        else:
-                            for i in range(len(items)):
-                                print("["+str(i+1)+"]     "+items[i].name)
-                            print("Which item do you want to use? (0 to choose another option)")
-                            option = input()
-                            if (not option.isdigit()):
-                                print("That is not a valid choice!")
-                            elif (int(option)>(len(items))) or (int(option)<1):
-                                print("That is not a valid choice!")
-                            elif option != '0':
-                                return ["item",int(option)-1]
-                    elif macroOption == '3':
-                        options = []
-                        for i in range(len(character.team)):
-                            if character.team[i].status != "faint":
-                                options.append(i)
-                        if options == []:
-                            print("You don't have Pokemon to switch to!")
-                            print("")
-                        else:
-                            for i in range(len(options)):
-                                print("["+str(options[i])+"]     " + character.team[options[i]].poke["name"]+" ["+character.team[options[i]].status+"]   Level "+str(character.team[options[i]].level))
-                            print("Which pokemon do you want to switch to? (0 to choose another option)")
-                            option = input()
-                            if (not option.isdigit()):
-                                print("That is not a valid choice!")
-                            elif int(option) not in options:
-                                print("That is not a valid choice!")
-                            elif int(option) != 0:
-                                return ["swap",int(option)]
+                elif macroOption == '2':
+                    items = character.items
+                    if len(items) == 0:
+                        print("You have no items!")
+                    else:
+                        for i in range(len(items)):
+                            print("["+str(i+1)+"]     "+items[i].name)
+                        print("Which item do you want to use? (0 to choose another option)")
+                        option = input()
+                        if (not option.isdigit()):
+                            print("That is not a valid choice!")
+                        elif (int(option)>(len(items))) or (int(option)<1):
+                            print("That is not a valid choice!")
+                        elif option != '0':
+                            return ["item",int(option)-1]
+                elif macroOption == '3':
+                    options = []
+                    for i in range(len(character.team)):
+                        if character.team[i].status != "faint":
+                            options.append(i)
+                    if options == []:
+                        print("You don't have Pokemon to switch to!")
+                        print("")
+                    else:
+                        for i in range(len(options)):
+                            print("["+str(options[i])+"]     " + character.team[options[i]].poke["name"]+" ["+character.team[options[i]].status+"]   Level "+str(character.team[options[i]].level))
+                        print("Which pokemon do you want to switch to? (0 to choose another option)")
+                        option = input()
+                        if (not option.isdigit()):
+                            print("That is not a valid choice!")
+                        elif int(option) not in options:
+                            print("That is not a valid choice!")
+                        elif int(option) != 0:
+                            return ["swap",int(option)]
         elif character.team[0].charging != -1:
             return ["attack",character.team[0].charging]
         elif character.team[0].recharging:
@@ -597,6 +615,7 @@ class Battle:
         # option is a list of form [move/swap/item,address]
         optionTypePlayer = optionPlayer[0]
         optionTypeEnemy = optionEnemy[0]
+
         # swap happpens first always
         if optionTypePlayer == "swap":
             print(self.player.name+" is swapping out "+self.player.team[0].poke["name"]+" and is sending in "+self.player.team[optionPlayer[1]].poke["name"])
@@ -644,7 +663,7 @@ class Battle:
             self.guiUpdate()
         # recharging will occur after the turn if necessary
         else:
-            #in this case, we have to check status conditions separatelyif (optionTypeEnemy == "recharge") and (self.enemy.team[0].recharging>0) and (self.enemy.team[0].HP !=0):
+            #in this case, we have to check status conditions separately
             if (optionTypeEnemy == "recharge") and (self.enemy.team[0].recharging>0) and (self.enemy.team[0].HP !=0):
                 self.enemy.team[0].recharging = self.enemy.team[0].recharging - 1
                 if self.enemy.team[0].recharging == 0:
@@ -653,28 +672,28 @@ class Battle:
                 self.player.team[0].recharging = self.player.team[0].recharging - 1
                 if self.player.team[0].recharging == 0:
                     print(self.player.team[0].poke["name"]+" is recharging from its Hyper Beam!")
-            self.guiUpdate()
+        self.guiUpdate()
 
-            [lossPlayer,playerToSwitch] = self.statusCheck(self.player,self.player.team[0],self.enemy.team[0])
-            [lossEnemy,enemyToSwitch] = self.statusCheck(self.enemy,self.enemy.team[0],self.player.team[0])
-            self.guiUpdate()
-            if lossPlayer:
-                if lossEnemy:
-                    print("Both players have lost the battle!")
-                    return "loss:both"
-                else:
-                    print(self.player.name+" has lost the battle!")
-                    return "loss:player"
-            elif lossEnemy:
-                print(self.enemy.name+ " has lost the battle!")
-                return "loss:enemy"
-            
-            if playerToSwitch:
-                print(self.player.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.player,self.enemy)
-            if enemyToSwitch:
-                print(self.enemy.name+" needs to swap in a Pokemon.")
-                self.swapIn(self.enemy,self.player)
+        [lossPlayer,playerToSwitch] = self.statusCheck(self.player,self.player.team[0],self.enemy.team[0])
+        [lossEnemy,enemyToSwitch] = self.statusCheck(self.enemy,self.enemy.team[0],self.player.team[0])
+        self.guiUpdate()
+        if lossPlayer:
+            if lossEnemy:
+                print("Both players have lost the battle!")
+                return "loss:both"
+            else:
+                print(self.player.name+" has lost the battle!")
+                return "loss:player"
+        elif lossEnemy:
+            print(self.enemy.name+ " has lost the battle!")
+            return "loss:enemy"
+        
+        if playerToSwitch:
+            print(self.player.name+" needs to swap in a Pokemon.")
+            self.swapIn(self.player,self.enemy)
+        if enemyToSwitch:
+            print(self.enemy.name+" needs to swap in a Pokemon.")
+            self.swapIn(self.enemy,self.player)
         return isOver
 
     def guiUpdate(self): 

@@ -76,6 +76,32 @@ class Pokemon:
             # also when we send in a pokemon its types are set back to normal (conversion is why this is necessary)
             self.types = self.poke["types"]
 
+            self.confused = False
+            self.flinching = False
+
+            self.leechSeed= False
+            self.modifiers = [0,0,0,0,0,0,0] # attack, defense, special, speed, accuracy, evasion, crit chance in stages
+            self.whereIs = "field" # this is "underground" if dig, "air" if fly, "faint" if dead before turn ends
+            self.lastDamage = [0,""] # first is amount of damage, second is type, for counter.
+            self.turncount["toxic"]=0
+            self.turncount["confused"] = 0
+            self.turncount["disable"]=0
+            self.turncount["bide"]=-1
+            self.turncount["thrash"] =-1
+            self.turncount["binding"]=-1
+            self.turncount["bound"] =-1
+            self.bideDamage = 0
+            # mirror move is interesting -- it will copy the last move that successfully targeted the player BY the pokemon currently on the field. Its tricky to totally implement. I will do a similar thing to metronome where I will actually handle the use of the move in battleClass, and the setting of the "mirrorable" move in parseAttack
+            self.mirrorable = ""
+            self.buffer = ""
+
+            self.disable = "" # this will contain the move that have been disabled
+            self.bound = False
+            self.recharging = 0 # for hyper beam
+            self.charging = -1 # this will be the index of the move that is charging
+            self.mimic_on = -1 # for mimic
+
+
         elif reason == "+paralyze":
             # pokemon getting paralyzed functions as expected
             self.activeStats[4] = max(1,math.floor(self.speed/4))
@@ -215,14 +241,21 @@ class Pokemon:
         self.modifiers = [0,0,0,0,0,0,0] # attack, defense, special, speed, accuracy, evasion, crit chance in stages
         self.whereIs = "field" # this is "underground" if dig, "air" if fly, "faint" if dead before turn ends
         self.lastDamage = [0,""] # first is amount of damage, second is type, for counter.
-        self.turncount = {"toxic":0,"sleep":0,"confused":0,"disable":0,"bide":-1}
+        self.turncount = {"toxic":0,"sleep":0,"confused":0,"disable":0,"bide":-1,"thrash":-1,"binding":-1,"bound":-1}
+        
+        self.thrashUsed = -1
+        self.bideUsed = -1
+        self.bindUsed = -1
+        
         self.bideDamage = 0
+        self.bindDamage = 0
+        
         # mirror move is interesting -- it will copy the last move that successfully targeted the player BY the pokemon currently on the field. Its tricky to totally implement. I will do a similar thing to metronome where I will actually handle the use of the move in battleClass, and the setting of the "mirrorable" move in parseAttack
         self.mirrorable = ""
         self.buffer = ""
+        self.strugglebuffer = self.moveset[0]
 
         self.disable = "" # this will contain the move that have been disabled
-        self.bound = False
         self.recharging = 0 # for hyper beam
         self.charging = -1 # this will be the index of the move that is charging
         self.mimic_on = -1 # for mimic

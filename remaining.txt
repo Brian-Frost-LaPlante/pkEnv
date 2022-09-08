@@ -1,18 +1,20 @@
-Freeze/hyperbeam/metronome/bind hyper beam PP rollover glitches
+Freeze/hyperbeam/metronome  PP rollover glitches
+hyper beam bind glitch
 horrible two-hit haze glitch
 counter "desynchronize" on paralysis, counter on items
-tests on swap out changes
+stat changes that occur when burn or paralyze is healed
 
 items
 
+extensive testing
+
+
 moves to do:
 
-thrashlike
-bindlike
 rage
 transform
 substitute
-struggle (with disable)
+
 
 implemented move categories:
 damage: standard
@@ -45,3 +47,8 @@ mimic
 mirrormove
 bide
 counter
+thrashlike
+struggle
+bindlike (with PP rollover glitch!)
+
+Maybe -- experience + leveling
