@@ -304,7 +304,11 @@ class Battle:
             if pokeAttacker.status not in ["sleep","freeze"]:
                 print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
 
-            if pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move","Metronome"]:
+            if (playerMove["name"] == "Counter") and (enemyMove["name"] == "Counter"):
+                print("Counter failed!")
+                pokeAttacker.lastDamage[0] = 0
+                result = ""  
+            elif pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move","Metronome"]:
                 result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
             elif pokeAttacker.moveset[moveAddress]["name"] == "Metronome":
                 result = self.metronome(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
@@ -348,7 +352,11 @@ class Battle:
                 if not pokeAttacker.flinching:
                     if pokeAttacker.status not in ["sleep","freeze"]:
                         print(pokeAttacker.poke["name"]+ " is attacking "+ pokeDefender.poke["name"]+ " with " + pokeAttacker.moveset[moveAddress]["name"])
-                    if pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move", "Metronome"]:
+                    if (playerMove["name"] == "Counter") and (enemyMove["name"] == "Counter"):
+                        print("Counter failed!")
+                        pokeAttacker.lastDamage[0] = 0
+                        result = ""  
+                    elif pokeAttacker.moveset[moveAddress]["name"] not in ["Mirror Move", "Metronome"]:
                         result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
                     elif pokeAttacker.moveset[moveAddress]["name"] == "Metronome":
                         result = self.metronome(pokeAttacker,pokeDefender,moveAddress,attacker,defender)
@@ -503,6 +511,8 @@ class Battle:
         character.team[0].statReset()
         character.team[0].mirrored=""
         opposite.team[0].mirrored=""
+        character.team[0].bideDamage = 0
+        character.team[0].turncount["bide"] = -1
 
         character.team[0], character.team[option] = character.team[option], character.team[0]
         character.team[0].statUpdate("send",character.badges)
@@ -518,12 +528,21 @@ class Battle:
                 if macroOption not in ['1','2','3']:
                     print("That is not a valid choice!")
                 elif macroOption == '1':
+                    # if the pokemon is using bide, we continue using bide
                     attacks = character.team[0].moveset
+
+                    if character.team[0].turncount["bide"] != -1:
+                        for a in range(len(attacks)):
+                            if attacks[a]["name"].casefold() == "bide":
+                                return ["attack",a]
+                    
+                    
                     for i in range(len(attacks)):
                         print("["+str(i+1)+"]     "+attacks[i]["name"])
                     option = input()   
                     if option != '0':
-                        if (not option.isdigit()):                            print("That is not a valid choice!")
+                        if (not option.isdigit()):                            
+                            print("That is not a valid choice!")
                         elif (int(option)>(len(attacks))) or (int(option)<1):
                             print("That is not a valid choice!")
                         elif attacks[int(option)-1]["name"] == character.team[0].disable:
@@ -573,7 +592,7 @@ class Battle:
         return
 
     def turn(self,optionPlayer,optionEnemy):
-        
+        moveInfo = self.moveInfo
         isOver = ""
         # option is a list of form [move/swap/item,address]
         optionTypePlayer = optionPlayer[0]
@@ -586,7 +605,7 @@ class Battle:
                 for i in len(moveInfo["moves"]):
                     if moveInfo["moves"][i]["name"] == "Mimic":
                         mimic = moveInfo["moves"][i]
-                self.player.team[0].moveset[mimic_on] = mimic
+                self.player.team[0].moveset[self.player.team[0].mimic_on] = mimic
                 self.player.team[0].mimic_on = -1
 
             self.player.team[0], self.player.team[optionPlayer[1]] = self.player.team[optionPlayer[1]], self.player.team[0]
@@ -599,7 +618,7 @@ class Battle:
                 for i in len(moveInfo["moves"]):
                     if moveInfo["moves"][i]["name"] == "Mimic":
                         mimic = moveInfo["moves"][i]
-                self.enemy.team[0].moveset[mimic_on] = mimic
+                self.enemy.team[0].moveset[self.player.team[0].mimic_on] = mimic
                 self.enemy.team[0].mimic_on = -1
             self.enemy.team[0], self.enemy.team[optionEnemy[1]] = self.enemy.team[optionEnemy[1]], self.enemy.team[0]
             self.enemy.team[0].statUpdate("send",self.enemy.badges)

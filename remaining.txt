@@ -1,18 +1,18 @@
 Freeze/hyperbeam/metronome/bind hyper beam PP rollover glitches
 horrible two-hit haze glitch
-struggle implementation (including with disable)
+counter "desynchronize" on paralysis, counter on items
+tests on swap out changes
 
 items
 
 moves to do:
 
-bide
 thrashlike
 bindlike
 rage
-counter
 transform
 substitute
+struggle (with disable)
 
 implemented move categories:
 damage: standard
@@ -43,3 +43,5 @@ metronome
 hyperbeam
 mimic
 mirrormove
+bide
+counter

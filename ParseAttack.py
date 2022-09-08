@@ -19,7 +19,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
         return ""
             
     if cats[0] == "bide":
-        # bide works in a funny way, completely dismissing most accuracy checks
+        # bide works in a funny way, completely dismissing most accuracy checks. on the turn it is used, it can fail.
+        # sleep/freeze only pause the counter
         accResult = accuracyCheck(pokeAttacker,pokeDefender,moveAddress)
         if accResult == "fail:sleep":
             return "sleep"
@@ -34,25 +35,25 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                 pokeAttacker.whereIs = "field"
                 return ""
             print(pokeAttacker.poke["name"] + " started storing up energy!")
-            pokeAttacker.turncount["bide"] = random.sample([2,3],1)
+            pokeAttacker.turncount["bide"] = random.sample([2,3],1)[0]
 
         elif pokeAttacker.turncount["bide"] == 0:
-            damage = min(pokeDefender.HP,pokeAttacker.bideDamage)
+            print(pokeAttacker.poke["name"] + " is unleashing its energy!")
+            damage = min(pokeDefender.HP,2*pokeAttacker.bideDamage)
             pokeDefender.activeStats[0] = pokeDefender.HP-damage
             pokeDefender.setStats()
             print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
             if pokeDefender.HP == 0:
                 print(pokeDefender.poke["name"]+" has fainted!")
                 return "defender:faint"
-            print(pokeAttacker.poke["name"] + " is unleashing its energy!")
             
             pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
             pokeAttacker.bideDamage = 0
 
         else:
             print(pokeAttacker.poke["name"] + " is storing up energy!")
+            pokeAttacker.bideDamage = pokeAttacker.bideDamage + pokeAttacker.lastDamage[0]
             pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
-
 
 
     # first, do an accuracy check to see if confusion, paralysis, freeze, or just plain missing stops the pokemon
@@ -64,6 +65,10 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
         damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
         pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
         pokeAttacker.setStats()
+        # interestingly, confuse damage counts as last damage done
+        pokeDefender.lastDamage[0] = damage
+        pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+
         pokeAttacker.whereIs = "field"
         print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
         if pokeAttacker.HP == 0:
@@ -92,9 +97,28 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
     if cats[0] == "null":
         print("That move had no effect!")
 
+    elif cats[0] == "counter":
+        if accResult == "success":
+            if (pokeAttacker.lastDamage[0] != 0) and (pokeAttacker.lastDamage[1] in ["normal","fighting"]):
+                damage = min(pokeDefender.HP,2*pokeAttacker.lastDamage[0])
+                pokeAttacker.lastDamage[0] = damage
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                if pokeDefender.HP == 0:
+                    print(pokeDefender.poke["name"]+" has fainted!")
+                    return "defender:faint"
+            else:
+                print("The move failed!")
+                pokeAttacker.lastDamage[0] = 0
+        else:
+            pokeAttacker.lastDamage[0] = 0
+            print("The move missed!")
+
     # status move *only* paralyze/confuse/poison/burn/toxic
     # alters the pokemon's status parameter
     elif cats[0] == 'status':
+        # these moves do not change lastDamage, unless it misses I think?
         pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
         # first do an accuracy check
         if accResult == "success":
@@ -138,6 +162,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                     print(pokeDefender.poke["name"]+" is now confused!")
         else:
             print("The move failed!")
+            pokeDefender.lastDamage[0] = 0
 
     # there are three walls, and they all can be active at once. 
     # Reflect and Light Screen work for 5 turns, while Mist is active until the pokemon switches out
@@ -165,6 +190,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
 
     # stat moves alter the self or enemy's stats
     elif cats[0] == 'stat':
+        pokeDefender.lastDamage[0] = 0 # resets damage done
         if cats[1] == 'self':
             # self stat-ups cannot miss. They can fail due to par or conf. They also fail after +6
             # They can apply badge boost and make the defending pokemon lose att/speed due to burn/par glitch    
@@ -185,6 +211,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                     pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
             else:
                 print("The move missed!")
+                pokeDefender.lastDamage[0] = 0
 
     # there are many kinds of damage moves. the most simple kinds don't do anything other than damage
     # then some have a chance of causing status or stat , some that cause recoil, some that heal the user,
@@ -211,6 +238,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                     return ""
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
                 print(pokeDefender.poke["name"]+" has instantly fainted!")
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 return "defender:faint"
             elif cats[1] in ["standard","enemy","heal","recoil","sd"]:
                 # These are all of the moves that deal regularly calculated damage once
@@ -218,6 +247,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                 pokeDefender.activeStats[0] = pokeDefender.HP-damage
                 pokeDefender.setStats()
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 # self-destructing moves can kill either the attacker or both the attacker and defender
                 if cats[1] == "sd":
                     pokeDefender.activeStats[0] = 0
@@ -328,6 +359,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                         n = 5
                 for i in range(n):
                     damage = min(pokeDefender.HP,damage)
+                    pokeDefender.lastDamage[0] = damage
+                    pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                     pokeDefender.activeStats[0] = pokeDefender.HP-damage
                     pokeDefender.setStats()
                     print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
@@ -349,11 +382,15 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             if move["name"] in ["Jump Kick","Hi Jump Kick"]:
                 # The jump kick moves do one damage to the user when they miss (yes, really, 1)
                 pokeAttacker.activeStats[0] = pokeAttacker.HP-1
+                pokeDefender.lastDamage[0] = 1
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 pokeAttacker.setStats()
                 print(pokeAttacker.poke["name"]+" hit a wall and took 1 damage!")
                 if pokeAttacker.HP == 0:
                     print(pokeAttacker.poke["name"]+" has fainted!")
                     return "attacker:faint"
+            else:
+                pokeDefender.lastDamage[0] = 0
    
     elif cats[0] == "dreameater":
         if accResult == "success":
@@ -361,6 +398,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                 print("The move failed!")
             else:
                 damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 pokeDefender.activeStats[0] = pokeDefender.HP-damage
                 pokeDefender.setStats()
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
@@ -375,6 +414,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                     return "defender:faint"
         else:
             print("The move missed!")
+            pokeDefender.lastDamage[0] = 0
         
         pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
 
@@ -399,6 +439,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             print(pokeAttacker.poke["name"]+" has changed type to match its opponent!")
         else:
             print("The move missed!")
+            pokeDefender.lastDamage[0] = 0
         pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
 
     elif cats[0]=="haze":
@@ -418,6 +459,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
         print("Various stat effects have been nullified!")
 
     elif cats[0]=="disable":
+        pokeDefender.lastDamage[0] = 0
         if pokeDefender.disable != "":
             print(pokeDefender.poke["name"]+" already has a move disabled!")
             return ""
@@ -434,12 +476,16 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             print(pokeDefender.poke["name"]+" had its " + moveToDisable+" disabled!")
 
     elif cats[0]=="leechseed":
-        if "grass" in pokeDefender.types:
-            print("Leech Seed does not affect Grass-type Pokemon!")
+        if accResult == "success":
+            if "grass" in pokeDefender.types:
+                print("Leech Seed does not affect Grass-type Pokemon!")
+            else:
+                print(pokeDefender.poke["name"] + " is seeded!")
+                pokeDefender.leechSeed = True
+            pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
         else:
-            print(pokeDefender.poke["name"] + " is seeded!")
-            pokeDefender.leechSeed = True
-        pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+            print("The move missed!")
+            pokeDefender.lastDamage[0] = 0
 
     elif cats[0]=="twoturn":
         # two cases: this is the first turn (charging will be -1) or the second turn after charging
@@ -452,11 +498,16 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             if accResult == "success":
                 damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
                 pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 pokeDefender.setStats()
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
                 if pokeDefender.HP == 0:
                     print(pokeDefender.poke["name"]+" has fainted!")
                     return "defender:faint"
+            else:
+                print("The move missed!")
+                pokeDefender.lastDamage[0] = 0
 
 
     elif cats[0]=="fly":
@@ -471,12 +522,17 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             pokeAttacker.whereIs = "field"
             if accResult == "success":
                 damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 pokeDefender.activeStats[0] = pokeDefender.HP-damage
                 pokeDefender.setStats()
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
                 if pokeDefender.HP == 0:
                     print(pokeDefender.poke["name"]+" has fainted!")
                     return "defender:faint"
+            else:
+                print("The move failed!")
+                pokeDefender.lastDamage[0] = 0
 
     elif cats[0]=="dig":
         # two cases: this is the first turn (charging will be -1) or the second turn after charging
@@ -490,52 +546,67 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             pokeAttacker.whereIs = "field"
             if accResult == "success":
                 damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
                 pokeDefender.activeStats[0] = pokeDefender.HP-damage
                 pokeDefender.setStats()
                 print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
                 if pokeDefender.HP == 0:
                     print(pokeDefender.poke["name"]+" has fainted!")
                     return "defender:faint"
-
+            else:
+                print("The move failed!")
+                pokeDefender.lastDamage[0] = 0
     
     elif cats[0] == "hyperbeam":
         # this move is kind of funny. It will try to do damage, of course. if the  move lands and doesn't kill the pokemon or break a substitute, it will enter "recharging". This means the next turn the player cannot take an action. a few things screw up recharging, like bind or freeze. That is handled outside of here.
-        damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
-        pokeDefender.activeStats[0] = pokeDefender.HP-damage
-        pokeDefender.setStats()
-        print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
-        pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
-        if pokeDefender.HP == 0:
-            print(pokeDefender.poke["name"]+" has fainted!")
-            return "defender:faint"
+        if accResult == "success":
+            damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+            pokeDefender.activeStats[0] = pokeDefender.HP-damage
+            pokeDefender.lastDamage[0] = damage
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            pokeDefender.setStats()
+            print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+            pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+            if pokeDefender.HP == 0:
+                print(pokeDefender.poke["name"]+" has fainted!")
+                return "defender:faint"
+            else:
+                pokeAttacker.recharging = pokeAttacker.recharging + 1
         else:
-            pokeAttacker.recharging = pokeAttacker.recharging + 1
+            print("The move failed!")
+            pokeDefender.lastDamage[0] = 0
 
     elif cats[0] == "mimic":
         # this move displays the enemy moveset and lets you pick one of their moves to replace mimic. it maintains the same PP as mimic. it can mimic literally any move.
-        print("Please select one of the Pokemon's moves to copy:")
-        M = len(pokeDefender.moveset)
-        for m in range(M):
-            print("["+str(m+1)+"]"+pokeDefender.moveset[m]["name"])
-        valid = False
-        while not valid:
-            selection = input()
-            if not selection.isdigit():
-                print("That is not a valid option")
-            elif (int(selection)-1) in range(M):
-                selection = int(selection)-1
-                valid = True
-            else:
-                print("That is not a valid option")
-        # now copy that move to where mimic was
-        pokeAttacker.moveset[moveAddress] = pokeDefender.moveset[selection]
-        pokeAttacker.mimic_on = moveAddress
-        pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
-        print(pokeAttacker.poke["name"]+" has copied "+pokeAttacker.moveset[moveAddress]["name"]+"!")
+        if accResult == "success":
+            print("Please select one of the Pokemon's moves to copy:")
+            M = len(pokeDefender.moveset)
+            for m in range(M):
+                print("["+str(m+1)+"]"+pokeDefender.moveset[m]["name"])
+            valid = False
+            while not valid:
+                selection = input()
+                if not selection.isdigit():
+                    print("That is not a valid option")
+                elif (int(selection)-1) in range(M):
+                    selection = int(selection)-1
+                    valid = True
+                else:
+                    print("That is not a valid option")
+            # now copy that move to where mimic was
+            pokeAttacker.moveset[moveAddress] = pokeDefender.moveset[selection]
+            pokeAttacker.mimic_on = moveAddress
+            pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+            print(pokeAttacker.poke["name"]+" has copied "+pokeAttacker.moveset[moveAddress]["name"]+"!")
+        else:
+            print("The move failed!")
+            pokeDefender.lastDamage[0] = 0
 
     elif cats[0] == "mirrormove":
         # this should only occur if metronome calls mirror move or mirror move calls mirror move. it should fail in both cases
         print("Mirror Move failed!")
+        pokeDefender.lastDamage[0] = 0
         pokeDefender.mirrored = "mirror move"
 
     

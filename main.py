@@ -24,7 +24,7 @@ with open("gen1data/typeInfo_gen1.json") as jsonFile:
 name = "Alakazam"
 stats = [10000,198,188,368,1]
 level = 100
-moves = ["hyper beam","body slam","mirror move","rest"]
+moves = ["hyper beam","body slam","counter","rest"]
 pk1 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 #pk1.confused = True
 #pk1.turncount["confused"] = 2
@@ -33,7 +33,7 @@ pk1 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveL
 name = "Pidgey"
 stats = [10000,138,128,308,278]
 level = 100
-moves = ["hyper beam","metronome","razor wind" ,"mirror move"]
+moves = ["hyper beam","metronome","razor wind" ,"bide"]
 pk2 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 pk2.wall = ["reflect"]
 
