@@ -56,20 +56,38 @@ def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
             return "fail:miss"
         else:
             return "success"
-            
+    
+       
     moveAcc = math.floor(pokeAttacker.moveset[moveAddress]["acc"]*255/100)
     pokeAcc = stage2Mult(pokeAttacker.modifiers[4])
     pokeEva = stage2Mult(-pokeDefender.modifiers[5])
     acc = math.floor(moveAcc*pokeAcc*pokeEva)
+    
+
     if pokeDefender.whereIs != "field":
-        moveResult = "fail:"+pokeDefender.whereIs 
+        moveResult =  "fail:"+pokeDefender.whereIs 
+    if pokeAttacker.moveset[moveAddress]["name"] == "Rage":
+        if pokeAttacker.rageAcc.casefold()!="standard":
+            accRoll = 1
+        if pokeAttacker.modifiers[4]-pokeDefender.modifiers[5] < 0:
+            if acc <= accRoll:
+                return "fail:miss"
+            else:
+                return "success"
+        else:
+            if acc <= accRoll:
+                return "gen1miss_rage"
+            else:
+                return "success"
     elif acc<=accRoll:
         moveResult = "fail:miss"    
-    if (pokeAttacker.turncount["bide"]==-1) and (pokeAttacker.turncount["thrash"]==-1):
+    if (pokeAttacker.turncount["bide"]==-1) and (pokeAttacker.turncount["thrash"]==-1) and (pokeAttacker.raging == -1):
         # bide/thrash PP only decreases on first turn
         if pokeAttacker.moveset[len(pokeAttacker.moveset)-1]["name"]!="Struggle":
             pokeAttacker.PP[moveAddress]=pokeAttacker.PP[moveAddress]-1
             if pokeAttacker.PP[moveAddress]<0:
                 pokeAttacker.PP[moveAddress] = 63
                 # PP Ups also applied. May have to do this later
+ 
+
     return moveResult

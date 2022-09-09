@@ -680,6 +680,18 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
 
     elif cats[0]=="disable":
         pokeDefender.lastDamage[0] = 0
+
+        # for whatever reason, this builds rage
+        if pokeDefender.raging != -1:
+            enemyChange = pokeAttacker.statUpdate("mod:"+"attack"+":"+"1"+":self:"+pokeDefender.status,attBadge)
+            if enemyChange == "speed":
+                pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
+                pokeDefender.setStats()
+            elif enemyChange == "attack":
+                pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
+                pokeDefender.setStats()
+
+
         if pokeDefender.disable != "":
             print(pokeDefender.poke["name"]+" already has a move disabled!")
             return ""
@@ -829,5 +841,62 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
         pokeDefender.lastDamage[0] = 0
         pokeDefender.mirrored = "mirror move"
 
-    
+    elif cats[0] == "rage":
+        # the first time rage is used, pokemon.raging will be -1. In this case, we do a simple accuracy check and if anything goes wrong, nothing interesting happens
+        if pokeAttacker.raging == -1:
+            if accResult != "success":
+                print(pokeAttacker.poke["name"] + " missed!")
+                pokeDefender.lastDamage[0] = 0
+            else:
+                # rage begins! the rampage is on!
+                pokeAttacker.raging = moveAddress
+                print("The rampage begins!")
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                enemyChange = pokeAttacker.statUpdate("mod:"+"attack"+":"+"1"+":self:"+pokeDefender.status,attBadge)
+                if enemyChange == "speed":
+                    pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
+                    pokeDefender.setStats()
+                elif enemyChange == "attack":
+                    pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
+                    pokeDefender.setStats()
+
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+                if pokeDefender.HP == 0:
+                    print(pokeDefender.poke["name"]+" has fainted!")
+                    return "defender:faint"
+        else:
+            # this is the class where rage is already ongoing. The move may hit, in which case it does damage and rage builds. If the move misses due to accuracy/evasion, there is a weird glitch where the accuracy of the move gets fucked up
+            if accResult == "success":
+                print("The rampage continues!")
+                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                enemyChange = pokeAttacker.statUpdate("mod:"+"attack"+":"+"1"+":self:"+pokeDefender.status,attBadge)
+                if enemyChange == "speed":
+                    pokeDefender.activeStats[4] = max(math.floor(pokeDefender.activeStats[4]/4),1)
+                    pokeDefender.setStats()
+                elif enemyChange == "attack":
+                    pokeDefender.activeStats[1] = max(math.floor(pokeDefender.activeStats[1]/2),1)
+                    pokeDefender.setStats()
+
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.lastDamage[0] = damage
+                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+                pokeDefender.setStats()
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+                if pokeDefender.HP == 0:
+                    print(pokeDefender.poke["name"]+" has fainted!")
+                    return "defender:faint"
+            else:
+                if accResult == "gen1miss_rage":
+                    print("Rage missed!")
+                else:
+                    print("Rage missed! "+pokeAttacker.poke["name"] + " is wobbling around!")
+                    pokeAttacker.rageAcc = "lowered"
+        return ""
+
     return ""

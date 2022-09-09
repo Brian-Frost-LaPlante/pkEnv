@@ -517,7 +517,7 @@ class Battle:
 
     def pickOptions(self,character):
         validChoice = False
-        if (character.team[0].charging == -1) and (not character.team[0].recharging):
+        if (character.team[0].charging == -1) and (not character.team[0].recharging) and (character.team[0].raging== -1):
             while not validChoice:
                 print(character.name+"'s Options")
                 print("[1] ATTACK     [2] ITEM     [3] SWAP")
@@ -607,6 +607,8 @@ class Battle:
             return ["attack",character.team[0].charging]
         elif character.team[0].recharging:
             return ["recharge"]
+        elif character.team[0].raging != -1:
+            return ["attack",character.team[0].raging]
         return
 
     def turn(self,optionPlayer,optionEnemy):

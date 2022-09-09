@@ -3,6 +3,7 @@ hyper beam bind glitch
 horrible two-hit haze glitch
 counter "desynchronize" on paralysis, counter on items
 stat changes that occur when burn or paralyze is healed
+metronome/mirrormove for bide, thrash, struggle?, rage
 
 items
 
@@ -11,7 +12,6 @@ extensive testing
 
 moves to do:
 
-rage
 transform
 substitute
 
@@ -50,5 +50,6 @@ counter
 thrashlike
 struggle
 bindlike (with PP rollover glitch!)
+rage
 
 Maybe -- experience + leveling

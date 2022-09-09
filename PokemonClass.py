@@ -91,6 +91,8 @@ class Pokemon:
             self.turncount["binding"]=-1
             self.turncount["bound"] =-1
             self.bideDamage = 0
+            self.raging = -1
+            self.rageAcc = "standard"
             # mirror move is interesting -- it will copy the last move that successfully targeted the player BY the pokemon currently on the field. Its tricky to totally implement. I will do a similar thing to metronome where I will actually handle the use of the move in battleClass, and the setting of the "mirrorable" move in parseAttack
             self.mirrorable = ""
             self.buffer = ""
@@ -246,7 +248,10 @@ class Pokemon:
         self.thrashUsed = -1
         self.bideUsed = -1
         self.bindUsed = -1
-        
+        # self.raging is index of rage used
+        self.raging = -1 
+        self.rageAcc = "standard"
+
         self.bideDamage = 0
         self.bindDamage = 0
         
