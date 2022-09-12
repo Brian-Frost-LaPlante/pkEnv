@@ -14,8 +14,9 @@ class Pokemon:
         if not pokeValid:
             raise Exception("That is not a valid Pokemon name!")
         
-    def setMoveset(self,moves,moveList):
+    def setMoveset(self,moves):
         moveset = []
+        moveList = self.moveList
         if (len(moves)<0) or (len(moves)>4):
             raise Exception("Each Pokemon can only have 1-4 moves")
         for i in range(len(moves)):
@@ -52,8 +53,9 @@ class Pokemon:
         # 1) sending poke out, 2) status change, 3) move modified the value
         # because of strange nonsense that happens in case 3, we need an output that will tell if the enemy needs to change its speed or attack stat
         enemyChange = ""
+        stats = self.outOfBattleStats[:]
         if reason == "send":
-            self.activeStats = self.outOfBattleStats
+            self.activeStats = stats
             # sending out is as intended
             # sets active stats to out of battle stats, then checks for status + badge boosts
             self.setStats()
@@ -72,7 +74,6 @@ class Pokemon:
                 self.activeStats[4] = min(999,math.floor(self.speed*1.125))
             if badges[3] == 1:
                 self.activeStats[3] = min(999,math.floor(self.special*1.125))
-            
             # also when we send in a pokemon its types are set back to normal (conversion is why this is necessary)
             self.types = self.poke["types"]
 
@@ -102,6 +103,7 @@ class Pokemon:
             self.recharging = 0 # for hyper beam
             self.charging = -1 # this will be the index of the move that is charging
             self.mimic_on = -1 # for mimic
+            self.transformed = False
 
 
         elif reason == "+paralyze":
@@ -157,7 +159,7 @@ class Pokemon:
                         # 2) The stat is recalculated as the original out-of-battle stat multiplied by the ratio corresponding to the new stat stage. If we're raising the stat, it's capped at 999; if we're lowering the stat, it's bumped up to 1 if it ends up at zero. So far, so good.
                         # note that we don't take paralysis or burn into account yet.
                         if ind<4:
-                            self.activeStats[ind+1] = min(999,max(1,math.floor(self.outOfBattleStats[ind+1]*stage2Mult(self.modifiers[ind]))))
+                            self.activeStats[ind+1] = min(999,max(1,math.floor(stats[ind+1]*stage2Mult(self.modifiers[ind]))))
                         # 3) If the stat being modified is the player's Pokémon's, the badge boost is applied to all of its stats that you have the corresponding badge for, capped at 999. This is not as expected. It means your other stats get re-boosted if you have the right badge.
                         # in our mod, we will allow both enemies and the player to get badge boosts, so we do not check the condition here
                         if badges[0] == 1:
@@ -201,9 +203,10 @@ class Pokemon:
         return enemyChange
 
     def statReset(self):
+        stats = self.outOfBattleStats
         self.modifiers = [0,0,0,0,0,0,0]
         self.confused = False
-        self.activeStats[1:] = self.outOfBattleStats[1:]
+        self.activeStats[1:] = stats[1:]
         self.setStats()
         self.turncount["toxic"]=0
         self.turncount["confused"]=0
@@ -213,14 +216,32 @@ class Pokemon:
         if "mist" in self.wall:
             self.wall.remove("mist")
         
+    def transformBuffer(self):
+        self.typeBuffer = self.types[:]
+        self.initMovesBuffer = self.initMoves[:]
+        self.PPBuffer = self.PP[:]
+        self.activeStatsBuffer = self.activeStats[:]
+
+    def unTransform(self):
+        self.transformed = False
+        self.types = self.typeBuffer
+        self.initMoves = self.initMovesBuffer
+        self.setMoveset(self.initMoves)
+        self.PP = self.PPBuffer
+        HP = self.activeStats[0] 
+        self.activeStats = self.activeStatsBuffer
+        self.activeStats[0] = HP
+        self.setStats()
 
     def __init__(self,name,level,stats,maxHP,moves,maxPP,PP,pokeList,moveList):
         self.setPoke(name,pokeList)
-        
+
+        self.moveList = moveList
+        self.initMoves = moves # the initial move list is used for when transform is applied
         # need to set the types separately because they can be modified by the move conversion
         self.types = self.poke["types"]
 
-        self.setMoveset(moves,moveList)
+        self.setMoveset(moves)
         self.wall = []
         # when the pokemon gets sent out, no matter what, it starts with out of battle stats
         self.outOfBattleStats = stats
@@ -228,7 +249,7 @@ class Pokemon:
         # These have readable names set in setstats, and have standard indexed names in activeStats
         self.activeStats = stats
         self.setStats()
-        
+
         self.maxHP = maxHP
         self.PP = PP
         self.maxPP = maxPP
@@ -259,6 +280,8 @@ class Pokemon:
         self.mirrorable = ""
         self.buffer = ""
         self.strugglebuffer = self.moveset[0]
+
+        self.transformed = False # this is 1 if transform is active
 
         self.disable = "" # this will contain the move that have been disabled
         self.recharging = 0 # for hyper beam

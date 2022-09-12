@@ -69,9 +69,9 @@ class Battle:
 
         moveList = []
         for i in range(len(self.moveInfo["moves"])):
-            if self.moveInfo["moves"][i]["name"]!="Metronome":
+            if self.moveInfo["moves"][i]["name"] not in ["Metronome","Mirror Move","Struggle","Mimic"]:
                 moveList.append(self.moveInfo["moves"][i])
-            else:
+            elif self.moveInfo["moves"][i]["name"] == "Metronome":
                 metronomeMove = self.moveInfo["moves"][i]
         moveToUse = random.sample(moveList,1)[0]
         pokeAttacker.moveset[moveAddress] = moveToUse #briefly make the move different
@@ -80,7 +80,7 @@ class Battle:
         if moveToUse["name"] == "Counter":
             print("The move did nothing!")
             return ""
-        elif moveToUse["category"] == "twoturn":
+        elif moveToUse["category"] == ["twoturn","bide","bindlike","thrashlike","rage"]:
             pokeAttacker.buffer = moveToUse
             result = parseAttack(pokeAttacker,pokeDefender,moveAddress,self.typeInfo,self.moveInfo,attacker.badges,defender.badges)
             pokeAttacker.moveset[moveAddress] = metronomeMove
@@ -510,9 +510,12 @@ class Battle:
         opposite.team[0].mirrored=""
         character.team[0].bideDamage = 0
         character.team[0].turncount["bide"] = -1
+        if character.team[0].transformed:
+            character.team[0].unTransform()
 
         character.team[0], character.team[option] = character.team[option], character.team[0]
         character.team[0].statUpdate("send",character.badges)
+        character.team[0].setStats()
         return ""
 
     def pickOptions(self,character):
@@ -629,8 +632,12 @@ class Battle:
                 self.player.team[0].moveset[self.player.team[0].mimic_on] = mimic
                 self.player.team[0].mimic_on = -1
 
+            if self.player.team[0].transformed:
+                self.player.team[0].unTransform()
+
             self.player.team[0], self.player.team[optionPlayer[1]] = self.player.team[optionPlayer[1]], self.player.team[0]
             self.player.team[0].statUpdate("send",self.player.badges)
+            self.player.team[0].setStats()
             self.guiUpdate()
         if optionTypeEnemy == "swap":
             print(self.enemy.name+" is swapping out "+self.enemy.team[0].poke["name"]+" and is sending in "+self.enemy.team[optionEnemy[1]].poke["name"])
@@ -641,8 +648,13 @@ class Battle:
                         mimic = moveInfo["moves"][i]
                 self.enemy.team[0].moveset[self.player.team[0].mimic_on] = mimic
                 self.enemy.team[0].mimic_on = -1
+
+            if self.enemy.team[0].transformed:
+                self.enemy.team[0].unTransform()
+
             self.enemy.team[0], self.enemy.team[optionEnemy[1]] = self.enemy.team[optionEnemy[1]], self.enemy.team[0]
             self.enemy.team[0].statUpdate("send",self.enemy.badges)
+            self.enemy.team[0].setStats()
             self.guiUpdate()
         # item happens next
         if optionTypePlayer == "item":
@@ -758,8 +770,10 @@ class Battle:
 
         print(self.player.name+" sends out "+self.player.team[0].poke["name"]+"!")
         self.player.team[0].statUpdate("send",self.player.badges)
+        self.player.team[0].setStats()
         print(self.enemy.name+" sends out "+self.enemy.team[0].poke["name"]+"!")
         self.enemy.team[0].statUpdate("send",self.enemy.badges)
+        self.enemy.team[0].setStats()
 
         isOver = ""
         while isOver == "":

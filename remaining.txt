@@ -5,6 +5,9 @@ counter "desynchronize" on paralysis, counter on items
 stat changes that occur when burn or paralyze is healed
 metronome/mirrormove for bide, thrash, struggle?, rage
 
+
+UI update to show pretty much everything
+
 items
 
 extensive testing
@@ -12,7 +15,6 @@ extensive testing
 
 moves to do:
 
-transform
 substitute
 
 
@@ -51,5 +53,6 @@ thrashlike
 struggle
 bindlike (with PP rollover glitch!)
 rage
+transform
 
 Maybe -- experience + leveling

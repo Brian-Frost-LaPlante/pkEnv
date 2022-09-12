@@ -899,4 +899,33 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                     pokeAttacker.rageAcc = "lowered"
         return ""
 
+    elif cats[0] == "transform":
+        if accResult!="success":
+            pokeDefender.lastDamage[0] = 0
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            print("Transformed failed!")
+        else:
+            print(pokeAttacker.poke["name"] + " is transforming into " + pokeDefender.poke["name"] + "!")
+            pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
+            # transform copies the types, moves, current stats and statmods, and sets all move PP to 5
+            # if switched out, the pokemon goes back to its original state.
+            # transformBuffer creates a buffer of current PP, moves, types, stats and so on.
+            # when the poke faints or switches out, this data is pushed back
+            pokeAttacker.transformBuffer()
+            # now we change types, stats, moves and PP
+            pokeAttacker.types = pokeDefender.types
+            pokeAttacker.initMoves = pokeDefender.initMoves
+            pokeAttacker.setMoveset(pokeAttacker.initMoves)
+            pokeAttacker.PP = []
+            for i in range(len(pokeAttacker.initMoves)):
+                pokeAttacker.PP.append(5)
+            pokeAttacker.modifiers = pokeDefender.modifiers
+            # the HP stat doesn't change
+            HP = pokeAttacker.activeStats[0]
+            pokeAttacker.activeStats = pokeDefender.activeStats[:]
+            pokeAttacker.activeStats[0] = HP
+            pokeAttacker.setStats()
+            pokeAttacker.transformed = True
+
+
     return ""
