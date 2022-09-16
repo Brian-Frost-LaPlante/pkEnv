@@ -752,7 +752,7 @@ class Battle:
     def guiInit(self):
         root = Tk()
         root.title('Battle')
-        root.geometry('920x200')
+        root.geometry('1900x300')
         root.configure(background = "white")
         root.resizable(False, False)
         options = {'padx': 5, 'pady': 5}

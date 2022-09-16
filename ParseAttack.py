@@ -4,6 +4,70 @@ from DamageCalculation import damageCalc
 from ConfuseCalculation import confuseCalc
 from AccuracyCheck import accuracyCheck
 
+def processConfuseDamage(pokeAttacker,pokeDefender,moveAddress):
+    print(pokeAttacker.poke["name"]+" hit itself in confusion!")
+    damage = confuseCalc(pokeAttacker,pokeDefender.wall)
+    if not pokeAttacker.subbing:
+        # without substitution things are normal
+        damage = min(damage,pokeAttacker.HP)
+        pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
+        pokeAttacker.setStats()
+        # interestingly, confuse damage counts as last damage done
+        pokeDefender.lastDamage[0] = damage
+        pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+        pokeAttacker.whereIs = "field"
+        print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
+        if pokeAttacker.HP == 0:
+            print(pokeAttacker.poke["name"]+" has fainted!")
+            return "attacker:faint"
+        else:
+            return ""
+    else:
+        # this is the case where the pokemon has a substitute out. it's weird
+        if not pokeDefender.subbing:
+            # if the enemy pokemon doesn't have a substitute up, nothing happens
+            print("Huh! Nothing happened!")
+        else:
+            # otherwise the attacker's confuse damage is afflicted to the opponent's substitute...
+            damage = min(damage,pokeDefender.subHP)
+            pokeDefender.subHP = pokeDefender.subHP-damage
+            print(pokeDefender.poke["name"]+"'s substitute took " + str(damage)+ " damage!")
+            pokeDefender.lastDamage[0] = damage
+            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+            if pokeDefender.subHP==0:
+                pokeDefender.subbing = False
+                print(pokeDefender.poke["name"] + "'s substitute broke!")
+        return ""
+
+def processStandardDamage(pokeAttacker,pokeDefender,moveAddress):
+    if not pokeDefender.subbing:
+        damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+        pokeDefender.activeStats[0] = pokeDefender.HP-damage
+        pokeDefender.setStats()
+        print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+        pokeDefender.lastDamage[0] = damage
+        pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+        if pokeDefender.HP == 0:
+            print(pokeDefender.poke["name"]+" has fainted!")
+            return "defender:faint"
+        return ""
+    else:
+        # if the defender has a substitute up, in most situations, the sub takes the damage instead
+        rawDamage = damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo)
+        # damage to substitute is what impacts the sub, ofc. damage for counter is computed using raw damage
+        damageWouldBe = min(pokeDefender.HP,rawDamage)
+        pokeDefender.lastDamage[0] = damageWouldBe
+        pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+        damage = min(pokeDefender.subHP,rawDamage)
+        pokeDefender.subHP = pokeDefender.subHP-damage
+        print(pokeDefender.poke["name"]+"'s substitute took " + str(damage)+ " damage!")
+        if pokeDefender.subHP==0:
+            pokeDefender.subbing = False
+            print(pokeDefender.poke["name"] + "'s substitute broke!")
+        return ""
+
+
+
 def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge,defBadge):
     # manages almost every move, except metronome which picks a move (in battle class) and then is managed here after
     move = pokeAttacker.moveset[moveAddress]
@@ -38,39 +102,33 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                 pokeAttacker.whereIs = "field"
                 return ""
             if accResult == "fail:confuse":
-                print(pokeAttacker.poke["name"]+" hit itself in confusion!")
-                damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
-                pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
-                pokeAttacker.setStats()
-                # interestingly, confuse damage counts as last damage done
-                pokeDefender.lastDamage[0] = damage
-                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-
-                pokeAttacker.whereIs = "field"
-                print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
-                if pokeAttacker.HP == 0:
-                    print(pokeAttacker.poke["name"]+" has fainted!")
-                    return "attacker:faint"
-                else:
-                    return ""
+                return processConfuseDamage(pokeAttacker,pokeDefender,moveAddress)
 
             print(pokeAttacker.poke["name"] + " started storing up energy!")
             pokeAttacker.turncount["bide"] = random.sample([2,3],1)[0]
             return ""
         elif pokeAttacker.turncount["bide"] == 0:
-            print(pokeAttacker.poke["name"] + " is unleashing its energy!")
-            damage = min(pokeDefender.HP,2*pokeAttacker.bideDamage)
-            pokeDefender.activeStats[0] = pokeDefender.HP-damage
-            pokeDefender.setStats()
-            pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
-            pokeAttacker.bideDamage = 0
-
-            print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
-            if pokeDefender.HP == 0:
-                print(pokeDefender.poke["name"]+" has fainted!")
-                return "defender:faint"
-            
-            return ""
+            if not pokeDefender.subbing:
+                print(pokeAttacker.poke["name"] + " is unleashing its energy!")
+                damage = min(pokeDefender.HP,2*pokeAttacker.bideDamage)
+                pokeDefender.activeStats[0] = pokeDefender.HP-damage
+                pokeDefender.setStats()
+                pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
+                pokeAttacker.bideDamage = 0
+                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                if pokeDefender.HP == 0:
+                    print(pokeDefender.poke["name"]+" has fainted!")
+                    return "defender:faint"
+            else:
+                print(pokeAttacker.poke["name"] + " is unleashing its energy!")
+                damage = min(pokeDefender.subHP,2*pokeAttacker.bideDamage)
+                pokeDefender.subHP = pokeDefender.subHP-damage
+                pokeAttacker.turncount["bide"] = pokeAttacker.turncount["bide"]-1
+                pokeAttacker.bideDamage = 0
+                print(pokeDefender.poke["name"]+"'s substitute took "+str(damage)+" damage!")
+                if pokeDefender.subHP == 0:
+                    print(pokeDefender.poke["name"]+"'s substitute broke!")
+                    pokeDefender.subbing = False
 
         else:
             print(pokeAttacker.poke["name"] + " is storing up energy!")
@@ -104,22 +162,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
         elif accResult == "fail:confuse":
             # thrash ENDS
             pokeAttacker.turncount["thrash"] = -1
-            print(pokeAttacker.poke["name"]+" hit itself in confusion!")
-            damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
-            pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
-            pokeAttacker.setStats()
-            # interestingly, confuse damage counts as last damage done
-            pokeDefender.lastDamage[0] = damage
-            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-
-            pokeAttacker.whereIs = "field"
-            print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
-            if pokeAttacker.HP == 0:
-                print(pokeAttacker.poke["name"]+" has fainted!")
-                return "attacker:faint"
-            else:
-                return ""
-
+            return processConfuseDamage(pokeAttacker,pokeDefender,moveAddress)
 
         # thrash attacks for 3-4 turns
         if pokeAttacker.turncount["thrash"] == -1:
@@ -147,16 +190,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             print(pokeAttacker.poke["name"] + " started thrashing about!")
             # 3-4 turns, counting this one, so really 2-3 "more" turns
             pokeAttacker.turncount["thrash"] = random.sample([1,2],1)[0]
-            damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
-            pokeDefender.activeStats[0] = pokeDefender.HP-damage
-            pokeDefender.setStats()
-            print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
-            pokeDefender.lastDamage[0] = damage
-            pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-            if pokeDefender.HP == 0:
-                print(pokeDefender.poke["name"]+" has fainted!")
-                return "defender:faint"
-            return ""
+            return processStandardDamage(pokeAttacker,pokeDefender,moveAddress)
         else:
             print(pokeAttacker.poke["name"] + " is thrashing about!")
             if accResult == "fail:sky":
@@ -209,24 +243,10 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             elif accResult == "fail:bind":
                 return "bind"
             elif accResult == "fail:confuse":
-                # thrash ENDS
-                pokeAttacker.turncount["thrash"] = -1
-                print(pokeAttacker.poke["name"]+" hit itself in confusion!")
-                damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
-                pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
-                pokeAttacker.setStats()
-                # interestingly, confuse damage counts as last damage done
-                pokeDefender.lastDamage[0] = damage
-                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-
-                pokeAttacker.whereIs = "field"
-                print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
-                if pokeAttacker.HP == 0:
-                    print(pokeAttacker.poke["name"]+" has fainted!")
-                    return "attacker:faint"
-                else:
-                    return ""
-
+                return processConfuseDamage(pokeAttacker,pokeDefender,moveAddress)
+            elif pokeDefender.subbing:
+                print("You cannot bind a substitute!")
+                return ""
             # apply bind , even if PP is 0! this causes an underflow
             roll = random.randint(0,63)
             if roll < 24:
@@ -281,21 +301,7 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
     elif accResult == "fail:bind":
         return "bind"
     elif accResult == "fail:confuse":
-        print(pokeAttacker.poke["name"]+" hit itself in confusion!")
-        damage = min(pokeAttacker.HP,confuseCalc(pokeAttacker,pokeDefender.wall))
-        pokeAttacker.activeStats[0] =pokeAttacker.HP-damage
-        pokeAttacker.setStats()
-        # interestingly, confuse damage counts as last damage done
-        pokeDefender.lastDamage[0] = damage
-        pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-
-        pokeAttacker.whereIs = "field"
-        print(pokeAttacker.poke["name"]+" took "+str(damage)+" damage!")
-        if pokeAttacker.HP == 0:
-            print(pokeAttacker.poke["name"]+" has fainted!")
-            return "attacker:faint"
-        else:
-            return ""
+        return processConfuseDamage(pokeAttacker,pokeDefender,moveAddress)
     elif accResult == "fail:paralyze":
         print(pokeAttacker.poke["name"]+" is paralyzed and can't move!")
         pokeAttacker.whereIs = "field"
@@ -354,32 +360,47 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                             # if the pokemon is recharging from hyper beam, going to sleep stops that
                             pokeDefender.recharging = False
                         elif (cats[1] == 'freeze'): 
-                            pokeDefender.status = "freeze"
-                            print(pokeDefender.poke["name"]+" has been frozen!")
+                            if pokeDefender.subbing:
+                                print("A substitute cannot be frozen!")
+                            else:
+                                pokeDefender.status = "freeze"
+                                print(pokeDefender.poke["name"]+" has been frozen!")
                         elif (cats[1] == 'poison'):
-                            pokeDefender.status = "poison"
-                            print(pokeDefender.poke["name"]+" has been poisoned!")
+                            if pokeDefender.subbing:
+                                print("A substitute cannot be poisoned!")
+                            else:
+                                pokeDefender.status = "poison"
+                                print(pokeDefender.poke["name"]+" has been poisoned!")
                         elif (cats[1] == 'burn'):
-                            pokeDefender.status = "burn"
-                            print(pokeDefender.poke["name"]+" has been burned!")
-                            pokeDefender.statUpdate("+burn",defBadge)
-                        elif cats[1] == "paralyze":
+                            if pokeDefender.subbing:
+                                print("A substitute cannot be burnt!")
+                            else:
+                                pokeDefender.status = "burn"
+                                print(pokeDefender.poke["name"]+" has been burned!")
+                                pokeDefender.statUpdate("+burn",defBadge)
+                        elif cats[1] == "paralyze": # for some reason, this affects subbed pokemon
                             pokeDefender.status = "paralyze"
                             print(pokeDefender.poke["name"]+" has been paralyzed!")
                             pokeDefender.statUpdate("+paralyze",defBadge)
                         elif (cats[1] == 'toxic'):
-                            pokeDefender.status = "poison"
-                            print(pokeDefender.poke["name"]+" has been badly poisoned!")
-                            pokeDefender.turncount["toxic"] = 1
+                            if pokeDefender.subbing:
+                                print("A substitute cannot be poisoned!")
+                            else:
+                                pokeDefender.status = "poison"
+                                print(pokeDefender.poke["name"]+" has been badly poisoned!")
+                                pokeDefender.turncount["toxic"] = 1
                     else:
                         print("The move failed!")
             else:
                 if pokeDefender.confused:
                     print(pokeDefender.poke["name"]+" is already confused!")
                 else:
-                    pokeDefender.confused = True
-                    pokeDefender.turncount["confused"] = random.randint(1,4)
-                    print(pokeDefender.poke["name"]+" is now confused!")
+                    if pokeDefender.subbing:
+                        print("A substitute cannot be confused!")
+                    else:
+                        pokeDefender.confused = True
+                        pokeDefender.turncount["confused"] = random.randint(1,4)
+                        print(pokeDefender.poke["name"]+" is now confused!")
         else:
             print("The move failed!")
             pokeDefender.lastDamage[0] = 0
@@ -424,8 +445,11 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
         elif cats[1] == 'enemy':
             pokeDefender.mirrorable = pokeAttacker.moveset[moveAddress]["name"]
             # enemy stat-ups can miss, fail due to par or conf and miss due to the enemy being in the sky/underground
+
             if accResult == "success":
-                if "mist" in pokeDefender.wall:
+                if pokeDefender.subbing:
+                    print("A substitute cannot have its stats lowered!")
+                elif "mist" in pokeDefender.wall:
                     print(pokeDefender.poke["name"] + " is shrouded in mist!")
                 else:
                     pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
@@ -449,28 +473,35 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             # "damage:instakill" simply checks the level and kills the enemy if it hits. cool!
             # "damage:multihit" and "damage:twohit" require slightly more intricate damage calculation
             if cats[1] == "instakill":
-                damage = pokeDefender.HP
-                pokeDefender.activeStats[0] = 0
-                pokeDefender.setStats()
                 #check type immunity and level
                 if ((move["type"]=="normal") and ("ghost" in pokeAttacker.poke["types"])) or ((move["type"]=="ground") and ("flying" in pokeDefender.poke["types"])) or (pokeDefender.level>pokeAttacker.level):
                     print("The move has no effect!")
                     return ""
-                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
-                print(pokeDefender.poke["name"]+" has instantly fainted!")
+                damage = pokeDefender.HP
                 pokeDefender.lastDamage[0] = damage
                 pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-                return "defender:faint"
+                if pokeDefender.subbing:
+                    pokeDefender.subbing = False
+                    pokeDefender.subHP = 0
+                    print(pokeDefender.poke["name"] + "'s substitute has immediately broken!")
+                else:
+                    pokeDefender.activeStats[0] = 0
+                    pokeDefender.setStats()
+                    print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
+                    print(pokeDefender.poke["name"]+" has instantly fainted!")
+                    return "defender:faint"
             elif cats[1] in ["standard","enemy","heal","recoil","sd"]:
                 # These are all of the moves that deal regularly calculated damage once
-                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
-                pokeDefender.activeStats[0] = pokeDefender.HP-damage
-                pokeDefender.setStats()
-                print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
-                pokeDefender.lastDamage[0] = damage
-                pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
-                # self-destructing moves can kill either the attacker or both the attacker and defender
+                subBef = pokeDefender.subbing
+                res = processStandardDamage(pokeAttacker,pokeDefender,moveAddress)
+                # if the pokemon's substitute was broken, other things happen
+                subBroken = subBef and (not pokeDefender.subbing)
+
+                # self-destructing moves can kill either the attacker, a substitute or both the attacker and defender
                 if cats[1] == "sd":
+                    if subBroken:
+                        # for some reason, sd moves dont self-damage after a substitute is broken
+                        return ""
                     pokeDefender.activeStats[0] = 0
                     pokeDefender.setStats()
                     print(pokeAttacker.poke["name"]+" has fainted in noble sacrifice!")
@@ -502,10 +533,13 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                 # for heal, standard and effect moves we only need to consider the enemy's chance to faint
                 elif cats[1] == "heal":
                     selfHeal = min(math.ceil(damage/2),pokeAttacker.maxHP-pokeAttacker.HP)
+                    if subBroken:
+                        # for some reason drain moves don't drain any HP if you broke a sub
+                        return ""
                     pokeAttacker.activeStats[0] = pokeAttacker.HP+selfHeal
                     pokeAttacker.setStats()
                     print(pokeAttacker.poke["name"]+" healed for "+str(selfHeal)+"!")
-                # check if defender fainted
+                # check if defender fainted in other situations
                 if pokeDefender.HP == 0:
                     print(pokeDefender.poke["name"]+" has fainted!")
                     return "defender:faint"
@@ -523,35 +557,44 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                                     if pokeDefender.status == "none":
                                         # only actually effects the enemy if they aren't already statused
                                         # paralysis, poison and burn last forever. sleep lasts 1-7 turns.
+                                        # subs cannot be poinones, frozen, burnt or flinched
+                                        # if the sub is not broken, damage moves can confuse or par
                                         if cats[2] == 'sleep':
-                                            pokeDefender.turncount["sleep"] = random.randint(1,7)
-                                            pokeDefender.status = "sleep"
-                                            print(pokeDefender.poke["name"]+" has been put to sleep!")
+                                            if not subBef:
+                                                pokeDefender.turncount["sleep"] = random.randint(1,7)
+                                                pokeDefender.status = "sleep"
+                                                print(pokeDefender.poke["name"]+" has been put to sleep!")
                                             pokeDefender.recharging = False
                                         elif (cats[2] == 'freeze'):
-                                            pokeDefender.status = "freeze"
-                                            print(pokeDefender.poke["name"]+" has been frozen!")
+                                            if not subBef:
+                                                pokeDefender.status = "freeze"
+                                                print(pokeDefender.poke["name"]+" has been frozen!")
                                         elif (cats[2] == 'poison'):
-                                            pokeDefender.status = "poison"
-                                            print(pokeDefender.poke["name"]+" has been poisoned!")
+                                            if not subBef:
+                                                pokeDefender.status = "poison"
+                                                print(pokeDefender.poke["name"]+" has been poisoned!")
                                         elif (cats[2] == 'burn'):
-                                            pokeDefender.status = "burn"
-                                            pokeDefender.statUpdate("+burn",defBadge)
-                                            print(pokeDefender.poke["name"]+" has been burned!")
+                                            if not subBef:
+                                                pokeDefender.status = "burn"
+                                                pokeDefender.statUpdate("+burn",defBadge)
+                                                print(pokeDefender.poke["name"]+" has been burned!")
                                         elif cats[2] == "paralyze":
-                                            pokeDefender.status = "paralyze"
-                                            pokeDefender.statUpdate("+paralyze",defBadge)
-                                            print(pokeDefender.poke["name"]+" has been paralyzed!")
+                                            if not subBroken:
+                                                pokeDefender.status = "paralyze"
+                                                pokeDefender.statUpdate("+paralyze",defBadge)
+                                                print(pokeDefender.poke["name"]+" has been paralyzed!")
                             elif cats[2] == 'confuse':
-                                if not pokeDefender.confused:
+                                if not (pokeDefender.confused or subBroken):
                                     #only works if pokemon not already confused, of course
                                     pokeDefender.confused = True
                                     pokeDefender.turncount["confused"] = random.randint(1,4)
                                     print(pokeDefender.poke["name"]+" is now confused!")
                             elif cats[2] == "flinch":
+                                if subBef:
+                                    return "" # substitutes cannot flinch
                                 pokeDefender.flinching = True
                                 return "flinch"
-                        else:
+                        elif not subBef:
                             # this means the attacks inflicts a stat change
                             enemyChange = pokeDefender.statUpdate("mod:"+cats[2]+":"+cats[3]+":enemy:"+pokeDefender.status,defBadge)
                             if enemyChange == "speed":
@@ -563,7 +606,8 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
 
             else:
                 # multihit case. a multihit move deal the same amount of damage n times
-                damage = min(pokeDefender.HP,damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo))
+                # we also need to consider substitute. multihit stops instantly when it hits a subst
+                damage = damageCalc(pokeAttacker,pokeDefender,moveAddress,typeInfo)
                 # the pokemon hits with the same amount of damage every time.
                 if cats[1] == "twohit":
                     n = 2
@@ -581,6 +625,12 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
                     damage = min(pokeDefender.HP,damage)
                     pokeDefender.lastDamage[0] = damage
                     pokeDefender.lastDamage[1] =  pokeAttacker.moveset[moveAddress]["type"].casefold()
+                    if pokeDefender.subbing:
+                        damage = min(pokeDefender.subHP,damage)
+                        pokeDefender.subHP = pokeDefender.subHP - damage
+                        if pokeDefender.subHP == 0:
+                            print("The substitute has broken!")
+                            return ""
                     pokeDefender.activeStats[0] = pokeDefender.HP-damage
                     pokeDefender.setStats()
                     print(pokeDefender.poke["name"]+" took "+str(damage)+" damage!")
@@ -927,5 +977,24 @@ def parseAttack(pokeAttacker,pokeDefender,moveAddress,typeInfo,moveInfo,attBadge
             pokeAttacker.setStats()
             pokeAttacker.transformed = True
 
+    if cats[0] == "substitute":
+        # substitute only works if the pokemon has more than 25% of its max HP
+        subFloor = math.floor(pokeAttacker.maxHP/4)
+        if pokeAttacker.HP < subFloor:
+            print(pokeAttacker.poke["name"]+" does not have enough HP to form a substitute!")
+            return ""
+        # in gen 1, the pokemon just dies if it has exactly 25% HP
+        elif pokeAttacker.HP == subFloor:
+            print(pokeAttacker.poke["name"]+" fainted forming a substitute!")
+            pokeAttacker.activeStats[0] = 0
+            pokeAttacker.setStats()
+            return: "attacker:faint"
+            
+        else:
+            pokeAttacker.subbing = True
+            pokeAttacker.subHP = subFloor+1
+            pokeAttacker.activeStats[0] = pokeAttacker.HP-subFloor
+            pokeAttacker.setStats()
+            print(pokeAttacker.poke["name"]+" has put up a substitute!")
 
     return ""
