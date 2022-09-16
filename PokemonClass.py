@@ -80,6 +80,8 @@ class Pokemon:
             self.confused = False
             self.flinching = False
 
+
+
             self.leechSeed= False
             self.modifiers = [0,0,0,0,0,0,0] # attack, defense, special, speed, accuracy, evasion, crit chance in stages
             self.whereIs = "field" # this is "underground" if dig, "air" if fly, "faint" if dead before turn ends
@@ -276,6 +278,9 @@ class Pokemon:
         self.bideDamage = 0
         self.bindDamage = 0
         
+        self.subbing = False
+        self.subHP = 0
+
         # mirror move is interesting -- it will copy the last move that successfully targeted the player BY the pokemon currently on the field. Its tricky to totally implement. I will do a similar thing to metronome where I will actually handle the use of the move in battleClass, and the setting of the "mirrorable" move in parseAttack
         self.mirrorable = ""
         self.buffer = ""

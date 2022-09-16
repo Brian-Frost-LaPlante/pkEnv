@@ -714,9 +714,18 @@ class Battle:
         enemypoke = self.enemy.team[0]
         playerpoke = self.player.team[0]
 
-        self.label_stats_e1.configure(text=enemypoke.poke["name"]+"\nStatus: "+str(enemypoke.status).casefold()+"\nHP: "+str(enemypoke.HP)+"\nPP: "+str(enemypoke.PP),background="white")
-        self.label_stats_e2.configure(text="ATT:  "+str(enemypoke.attack)+"\nDEF:  "+str(enemypoke.defense)+"\nSPEC: "+str(enemypoke.special)+"\nSPD:  "+str(enemypoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
-
+        textE = "NAME: "+enemypoke.poke["name"]+"\t\tSTATUS: "+str(enemypoke.status).casefold()+"\tHP: "+str(enemypoke.HP)+"/"+str(enemypoke.maxHP)+"\tPP: "+str(enemypoke.PP) + "\tATT:  "+str(enemypoke.attack)+"\t\tDEF:  "+str(enemypoke.defense)+"\t\tSPEC: "+str(enemypoke.special)+"\tSPD:  "+str(enemypoke.speed)
+        textE = textE + "\nMOD: "+str(enemypoke.modifiers)+"\tCONF: "+str(enemypoke.confused)+"\tTURNCT: "+str(enemypoke.turncount)
+        textE = textE + "\nLOC:  "+str(enemypoke.whereIs)+"\tLASTDAM:  "+str(enemypoke.lastDamage)+"\tMIR: "+str(enemypoke.mirrorable)+"\tDIS:  "+str(enemypoke.disable) + "\tTRANSF: "+str(enemypoke.transformed) + "\tRAGE: "+str(enemypoke.raging)
+        textE = textE + "\tRAGEACC:  "+str(enemypoke.rageAcc)+"\tSEED:  "+str(enemypoke.leechSeed)+"\tCHARGE: "+str(enemypoke.charging)+"\nRECHARGE:  "+str(enemypoke.recharging) + "\tMIMIC: "+str(enemypoke.mimic_on) + "\tWALL: "+str(enemypoke.wall)
+        textE = textE + "\tTHRASHUSED:  "+str(enemypoke.thrashUsed)+"\tBIDEUSED:  "+str(enemypoke.bideUsed) + "\tBINDUSED:  "+str(enemypoke.bindUsed)+"\tBIDEDAM:  "+str(enemypoke.bideDamage) + "\tBINDDAM:  "+str(enemypoke.bindDamage)
+        textE = textE + "\nTYPES:  "+str(enemypoke.types) + "\tSUB:  " + str(enemypoke.subbing) + "\tSUBHP: " + str(enemypoke.subHP) + "\tMAXPP:  "+str(enemypoke.maxPP) + "\t\tMOVES: ["
+        for i in range(len(enemypoke.moveset)):
+            textE = textE + enemypoke.moveset[i]["name"]
+            if i != (len(enemypoke.moveset)-1):
+                textE = textE + ", "
+        textE = textE + "]"
+        self.label_stats_e.configure(text=textE,background="white", font=('Helvetica 8'), justify= LEFT)
 
         img_frontsprite = PhotoImage(file="gen1data/sprites/front-"+str(enemypoke.poke["number"])+".png")
         self.label_frontsprite.configure(image=img_frontsprite)
@@ -726,8 +735,67 @@ class Battle:
         self.label_backsprite.configure(image=img_backsprite)
         self.label_backsprite.image = img_backsprite
 
-        self.label_stats_p1.configure(text=playerpoke.poke["name"]+"\nStatus: "+str(playerpoke.status).casefold()+"\nHP: "+str(playerpoke.HP)+"\nPP: "+str(playerpoke.PP),background="white", font=('Helvetica 8'), justify= LEFT)
-        self.label_stats_p2.configure(text="ATT:  "+str(playerpoke.attack)+"\nDEF:  "+str(playerpoke.defense)+"\nSPEC: "+str(playerpoke.special)+"\nSPD:  "+str(playerpoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
+        textP = "NAME: "+playerpoke.poke["name"]+"\t\tSTATUS: "+str(playerpoke.status).casefold()+"\tHP: "+str(playerpoke.HP)+"/"+str(playerpoke.maxHP)+"\tPP: "+str(playerpoke.PP) + "\tATT:  "+str(playerpoke.attack)+"\t\tDEF:  "+str(playerpoke.defense)+"\t\tSPEC: "+str(playerpoke.special)+"\tSPD:  "+str(playerpoke.speed)
+        textP = textP + "\nMOD: "+str(playerpoke.modifiers)+"\tCONF: "+str(playerpoke.confused)+"\tTURNCT: "+str(playerpoke.turncount)
+        textP = textP + "\nLOC:  "+str(playerpoke.whereIs)+"\tLASTDAM:  "+str(playerpoke.lastDamage)+"\tMIR: "+str(playerpoke.mirrorable)+"\tDIS:  "+str(playerpoke.disable) + "\tTRANSF: "+str(playerpoke.transformed) + "\tRAGE: "+str(playerpoke.raging)
+        textP = textP + "\tRAGEACC:  "+str(playerpoke.rageAcc)+"\tSEED:  "+str(playerpoke.leechSeed)+"\tCHARGE: "+str(playerpoke.charging)+"\nRECHARGE:  "+str(playerpoke.recharging) + "\tMIMIC: "+str(playerpoke.mimic_on) + "\tWALL: "+str(playerpoke.wall)
+        textP = textP + "\tTHRASHUSED:  "+str(playerpoke.thrashUsed)+"\tBIDEUSED:  "+str(playerpoke.bideUsed) + "\tBINDUSED:  "+str(playerpoke.bindUsed)+"\tBIDEDAM:  "+str(playerpoke.bideDamage) + "\tBINDDAM:  "+str(playerpoke.bindDamage)
+        textP = textP + "\nTYPES:  "+str(playerpoke.types) + "\tSUB:  " + str(playerpoke.subbing) + "\tSUBHP: " + str(playerpoke.subHP) + "\tMAXPP:  "+str(playerpoke.maxPP) + "\t\tMOVES: ["
+        for i in range(len(playerpoke.moveset)):
+            textP = textP + playerpoke.moveset[i]["name"]
+            if i != (len(playerpoke.moveset)-1):
+                textP = textP + ", "
+        textP = textP + "]"
+
+        self.label_stats_p.configure(text=textP,background="white", font=('Helvetica 8'), justify= LEFT)
+
+    def guiInit(self):
+        root = Tk()
+        root.title('Battle')
+        root.geometry('920x200')
+        root.configure(background = "white")
+        root.resizable(False, False)
+        options = {'padx': 5, 'pady': 5}
+
+        # grab enemy pokemon details
+        enemypoke = self.enemy.team[0]
+        playerpoke = self.player.team[0]
+
+        textE = "NAME: "+enemypoke.poke["name"]+"\tSTATUS: "+str(enemypoke.status).casefold()+"\tHP: "+str(enemypoke.HP)+"/"+str(enemypoke.maxHP)+"\tPP: "+str(enemypoke.PP) + "\tATT:  "+str(enemypoke.attack)+"\t\tDEF:  "+str(enemypoke.defense)+"\t\tSPEC: "+str(enemypoke.special)+"\tSPD:  "+str(enemypoke.speed)
+        textE = textE + "\nMOD: "+str(enemypoke.modifiers)+"\tCONF: "+str(enemypoke.confused)+"\tTURNCT: "+str(enemypoke.turncount)
+        textE = textE + "\nLOC:  "+str(enemypoke.whereIs)+"\tLASTDAM:  "+str(enemypoke.lastDamage)+"\tMIR: "+str(enemypoke.mirrorable)+"\tDIS:  "+str(enemypoke.disable) + "\tTRANSF: "+str(enemypoke.transformed) + "\tRAGE: "+str(enemypoke.raging)
+        textE = textE + "\tRAGEACC:  "+str(enemypoke.rageAcc)+"\tSEED:  "+str(enemypoke.leechSeed)+"\tCHARGE: "+str(enemypoke.charging)+"\nRECHARGE:  "+str(enemypoke.recharging) + "\tMIMIC: "+str(enemypoke.mimic_on) + "\tWALL: "+str(enemypoke.wall)
+        textE = textE + "\tTHRASHUSED:  "+str(enemypoke.thrashUsed)+"\tBIDEUSED:  "+str(enemypoke.bideUsed) + "\tBINDUSED:  "+str(enemypoke.bindUsed)+"\tBIDEDAM:  "+str(enemypoke.bideDamage) + "\tBINDDAM:  "+str(enemypoke.bindDamage)
+        textE = textE + "\nTYPES:  "+str(enemypoke.types) + "\tSUB:  " + str(enemypoke.subbing) + "\tSUBHP: " + str(enemypoke.subHP) + "\tMAXPP:  "+str(enemypoke.maxPP) + "\t\tMOVES: ["
+        for i in range(len(enemypoke.moveset)):
+            textE = textE + enemypoke.moveset[i]["name"]
+            if i != (len(enemypoke.moveset)-1):
+                textE = textE + ", "
+        textE = textE + "]"
+        self.label_stats_e = Label(root,text=textE,background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_e.grid(column=0,row=0,sticky='W',**options)
+
+        img_frontsprite = PhotoImage(file="gen1data/sprites/front-"+str(enemypoke.poke["number"])+".png")
+        self.label_frontsprite = Label(root,image=img_frontsprite,background="white")
+        self.label_frontsprite.grid(column=1,row=0,**options)
+
+        textP = "NAME: "+playerpoke.poke["name"]+"\t\tSTATUS: "+str(playerpoke.status).casefold()+"\tHP: "+str(playerpoke.HP)+"/"+str(playerpoke.maxHP)+"\tPP: "+str(playerpoke.PP) + "\tATT:  "+str(playerpoke.attack)+"\t\tDEF:  "+str(playerpoke.defense)+"\t\tSPEC: "+str(playerpoke.special)+"\tSPD:  "+str(playerpoke.speed)
+        textP = textP + "\nMOD: "+str(playerpoke.modifiers)+"\tCONF: "+str(playerpoke.confused)+"\tTURNCT: "+str(playerpoke.turncount)
+        textP = textP + "\nLOC:  "+str(playerpoke.whereIs)+"\tLASTDAM:  "+str(playerpoke.lastDamage)+"\tMIR: "+str(playerpoke.mirrorable)+"\tDIS:  "+str(playerpoke.disable) + "\tTRANSF: "+str(playerpoke.transformed) + "\tRAGE: "+str(playerpoke.raging)
+        textP = textP + "\tRAGEACC:  "+str(playerpoke.rageAcc)+"\tSEED:  "+str(playerpoke.leechSeed)+"\tCHARGE: "+str(playerpoke.charging)+"\nRECHARGE:  "+str(playerpoke.recharging) + "\tMIMIC: "+str(playerpoke.mimic_on) + "\tWALL: "+str(playerpoke.wall)
+        textP = textP + "\tTHRASHUSED:  "+str(playerpoke.thrashUsed)+"\tBIDEUSED:  "+str(playerpoke.bideUsed) + "\tBINDUSED:  "+str(playerpoke.bindUsed)+"\tBIDEDAM:  "+str(playerpoke.bideDamage) + "\tBINDDAM:  "+str(playerpoke.bindDamage)
+        textP = textP + "\nTYPES:  "+str(playerpoke.types) + "\tSUB:  " + str(playerpoke.subbing) + "\tSUBHP: " + str(playerpoke.subHP) + "\tMAXPP:  "+str(playerpoke.maxPP) + "\t\tMOVES: ["
+        for i in range(len(playerpoke.moveset)):
+            textP = textP + playerpoke.moveset[i]["name"]
+            if i != (len(playerpoke.moveset)-1):
+                textP = textP + ", "
+        textP = textP + "]"
+        self.label_stats_p = Label(root,text=textP,background="white", font=('Helvetica 8'), justify= LEFT)
+        self.label_stats_p.grid(column=0,row=1,sticky='W',**options)
+
+        img_backsprite = PhotoImage(file="gen1data/sprites/back-"+str(playerpoke.poke["number"])+".png")
+        self.label_backsprite = Label(root,image=img_backsprite,background="white")
+        self.label_backsprite.grid(column=1,row=1,**options)
 
 
     def __init__(self,player,enemy,typeInfo,moveInfo):
@@ -737,34 +805,7 @@ class Battle:
         self.enemy = enemy
 
         ### GUI INITIALIZATION
-        root = Tk()
-        root.title('Battle')
-        root.geometry('450x200')
-        root.configure(background = "white")
-        root.resizable(False, False)
-        options = {'padx': 5, 'pady': 5}
-
-        # grab enemy pokemon details
-        enemypoke = self.enemy.team[0]
-        playerpoke = self.player.team[0]
-
-        self.label_stats_e1 = Label(root,text=enemypoke.poke["name"]+"\nStatus: "+str(enemypoke.status).casefold()+"\nHP: "+str(enemypoke.HP)+"\nPP: "+str(enemypoke.PP),background="white", font=('Helvetica 8'), justify= LEFT)
-        self.label_stats_e1.grid(column=0,row=0,sticky='W',**options)
-        self.label_stats_e2 = Label(root,text="ATT:  "+str(enemypoke.attack)+"\nDEF:  "+str(enemypoke.defense)+"\nSPEC: "+str(enemypoke.special)+"\nSPD:  "+str(enemypoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
-        self.label_stats_e2.grid(column=1,row=0,sticky='W',**options)
-
-        img_frontsprite = PhotoImage(file="gen1data/sprites/front-"+str(enemypoke.poke["number"])+".png")
-        self.label_frontsprite = Label(root,image=img_frontsprite,background="white")
-        self.label_frontsprite.grid(column=2,row=0,**options)
-
-        self.label_stats_p1 = Label(root,text=playerpoke.poke["name"]+"\nStatus: "+str(playerpoke.status).casefold()+"\nHP: "+str(playerpoke.HP)+"\nPP: "+str(playerpoke.PP),background="white", font=('Helvetica 8'), justify= LEFT)
-        self.label_stats_p1.grid(column=1,row=1,sticky='W',**options)
-        self.label_stats_p2 = Label(root,text="ATT:  "+str(playerpoke.attack)+"\nDEF:  "+str(playerpoke.defense)+"\nSPEC: "+str(playerpoke.special)+"\nSPD:  "+str(playerpoke.speed),background="white", font=('Helvetica 8'), justify= LEFT)
-        self.label_stats_p2.grid(column=2,row=1,sticky='W',**options)
-        
-        img_backsprite = PhotoImage(file="gen1data/sprites/back-"+str(playerpoke.poke["number"])+".png")
-        self.label_backsprite = Label(root,image=img_backsprite,background="white")
-        self.label_backsprite.grid(column=0,row=1,**options)
+        self.guiInit()
         ###
 
 
