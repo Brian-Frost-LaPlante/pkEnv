@@ -31,9 +31,9 @@ pk1 = Pokemon(name,level,stats,10000,moves,[15,15,15,15],[5,5,5,5],pokemonList,m
 
 
 name = "Pidgey"
-stats = [1000,138,128,308,278]
+stats = [10000,138,128,308,278]
 level = 100
-moves = ["hyper beam","disable","transform" ,"bide"]
+moves = ["hyper beam","substitute","transform" ,"bide"]
 pk2 = Pokemon(name,level,stats,10000,moves,[5,5,5,5],[5,5,5,5],pokemonList,moveList)
 pk2.wall = ["reflect"]
 

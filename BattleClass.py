@@ -506,6 +506,7 @@ class Battle:
         
         print(character.name+" is sending in "+character.team[option].poke["name"])
         character.team[0].statReset()
+        character.team[0].subbing = False
         character.team[0].mirrored=""
         opposite.team[0].mirrored=""
         character.team[0].bideDamage = 0
@@ -625,6 +626,7 @@ class Battle:
         if optionTypePlayer == "swap":
             print(self.player.name+" is swapping out "+self.player.team[0].poke["name"]+" and is sending in "+self.player.team[optionPlayer[1]].poke["name"])
             self.player.team[0].statReset()
+            self.player.team[0].subbing = False
             if self.player.team[0].mimic_on != -1:
                 for i in len(moveInfo["moves"]):
                     if moveInfo["moves"][i]["name"] == "Mimic":
@@ -642,6 +644,7 @@ class Battle:
         if optionTypeEnemy == "swap":
             print(self.enemy.name+" is swapping out "+self.enemy.team[0].poke["name"]+" and is sending in "+self.enemy.team[optionEnemy[1]].poke["name"])
             self.enemy.team[0].statReset()
+            self.enemy.team[0].subbing = False
             if self.enemy.team[0].mimic_on != -1:
                 for i in len(moveInfo["moves"]):
                     if moveInfo["moves"][i]["name"] == "Mimic":
@@ -719,7 +722,7 @@ class Battle:
         textE = textE + "\nLOC:  "+str(enemypoke.whereIs)+"\tLASTDAM:  "+str(enemypoke.lastDamage)+"\tMIR: "+str(enemypoke.mirrorable)+"\tDIS:  "+str(enemypoke.disable) + "\tTRANSF: "+str(enemypoke.transformed) + "\tRAGE: "+str(enemypoke.raging)
         textE = textE + "\tRAGEACC:  "+str(enemypoke.rageAcc)+"\tSEED:  "+str(enemypoke.leechSeed)+"\tCHARGE: "+str(enemypoke.charging)+"\nRECHARGE:  "+str(enemypoke.recharging) + "\tMIMIC: "+str(enemypoke.mimic_on) + "\tWALL: "+str(enemypoke.wall)
         textE = textE + "\tTHRASHUSED:  "+str(enemypoke.thrashUsed)+"\tBIDEUSED:  "+str(enemypoke.bideUsed) + "\tBINDUSED:  "+str(enemypoke.bindUsed)+"\tBIDEDAM:  "+str(enemypoke.bideDamage) + "\tBINDDAM:  "+str(enemypoke.bindDamage)
-        textE = textE + "\nTYPES:  "+str(enemypoke.types) + "\tSUB:  " + str(enemypoke.subbing) + "\tSUBHP: " + str(enemypoke.subHP) + "\tMAXPP:  "+str(enemypoke.maxPP) + "\t\tMOVES: ["
+        textE = textE + "\nTYPES:  "+str(enemypoke.types) + "\tXACC: "+str(enemypoke.xAcc)+ "\tSUB:  " + str(enemypoke.subbing) + "\tSUBHP: " + str(enemypoke.subHP) + "\tMAXPP:  "+str(enemypoke.maxPP) + "\t\tMOVES: ["
         for i in range(len(enemypoke.moveset)):
             textE = textE + enemypoke.moveset[i]["name"]
             if i != (len(enemypoke.moveset)-1):
@@ -740,7 +743,7 @@ class Battle:
         textP = textP + "\nLOC:  "+str(playerpoke.whereIs)+"\tLASTDAM:  "+str(playerpoke.lastDamage)+"\tMIR: "+str(playerpoke.mirrorable)+"\tDIS:  "+str(playerpoke.disable) + "\tTRANSF: "+str(playerpoke.transformed) + "\tRAGE: "+str(playerpoke.raging)
         textP = textP + "\tRAGEACC:  "+str(playerpoke.rageAcc)+"\tSEED:  "+str(playerpoke.leechSeed)+"\tCHARGE: "+str(playerpoke.charging)+"\nRECHARGE:  "+str(playerpoke.recharging) + "\tMIMIC: "+str(playerpoke.mimic_on) + "\tWALL: "+str(playerpoke.wall)
         textP = textP + "\tTHRASHUSED:  "+str(playerpoke.thrashUsed)+"\tBIDEUSED:  "+str(playerpoke.bideUsed) + "\tBINDUSED:  "+str(playerpoke.bindUsed)+"\tBIDEDAM:  "+str(playerpoke.bideDamage) + "\tBINDDAM:  "+str(playerpoke.bindDamage)
-        textP = textP + "\nTYPES:  "+str(playerpoke.types) + "\tSUB:  " + str(playerpoke.subbing) + "\tSUBHP: " + str(playerpoke.subHP) + "\tMAXPP:  "+str(playerpoke.maxPP) + "\t\tMOVES: ["
+        textP = textP + "\nTYPES:  "+str(playerpoke.types) + "\tXACC: "+str(playerpoke.xAcc)+ "\tSUB:  " + str(playerpoke.subbing) + "\tSUBHP: " + str(playerpoke.subHP) + "\tMAXPP:  "+str(playerpoke.maxPP) + "\t\tMOVES: ["
         for i in range(len(playerpoke.moveset)):
             textP = textP + playerpoke.moveset[i]["name"]
             if i != (len(playerpoke.moveset)-1):
@@ -766,7 +769,7 @@ class Battle:
         textE = textE + "\nLOC:  "+str(enemypoke.whereIs)+"\tLASTDAM:  "+str(enemypoke.lastDamage)+"\tMIR: "+str(enemypoke.mirrorable)+"\tDIS:  "+str(enemypoke.disable) + "\tTRANSF: "+str(enemypoke.transformed) + "\tRAGE: "+str(enemypoke.raging)
         textE = textE + "\tRAGEACC:  "+str(enemypoke.rageAcc)+"\tSEED:  "+str(enemypoke.leechSeed)+"\tCHARGE: "+str(enemypoke.charging)+"\nRECHARGE:  "+str(enemypoke.recharging) + "\tMIMIC: "+str(enemypoke.mimic_on) + "\tWALL: "+str(enemypoke.wall)
         textE = textE + "\tTHRASHUSED:  "+str(enemypoke.thrashUsed)+"\tBIDEUSED:  "+str(enemypoke.bideUsed) + "\tBINDUSED:  "+str(enemypoke.bindUsed)+"\tBIDEDAM:  "+str(enemypoke.bideDamage) + "\tBINDDAM:  "+str(enemypoke.bindDamage)
-        textE = textE + "\nTYPES:  "+str(enemypoke.types) + "\tSUB:  " + str(enemypoke.subbing) + "\tSUBHP: " + str(enemypoke.subHP) + "\tMAXPP:  "+str(enemypoke.maxPP) + "\t\tMOVES: ["
+        textE = textE + "\nTYPES:  "+str(enemypoke.types) + "\tXACC: "+str(enemypoke.xAcc)+ "\tSUB:  " + str(enemypoke.subbing) + "\tSUBHP: " + str(enemypoke.subHP) + "\tMAXPP:  "+str(enemypoke.maxPP) + "\t\tMOVES: ["
         for i in range(len(enemypoke.moveset)):
             textE = textE + enemypoke.moveset[i]["name"]
             if i != (len(enemypoke.moveset)-1):
@@ -784,7 +787,7 @@ class Battle:
         textP = textP + "\nLOC:  "+str(playerpoke.whereIs)+"\tLASTDAM:  "+str(playerpoke.lastDamage)+"\tMIR: "+str(playerpoke.mirrorable)+"\tDIS:  "+str(playerpoke.disable) + "\tTRANSF: "+str(playerpoke.transformed) + "\tRAGE: "+str(playerpoke.raging)
         textP = textP + "\tRAGEACC:  "+str(playerpoke.rageAcc)+"\tSEED:  "+str(playerpoke.leechSeed)+"\tCHARGE: "+str(playerpoke.charging)+"\nRECHARGE:  "+str(playerpoke.recharging) + "\tMIMIC: "+str(playerpoke.mimic_on) + "\tWALL: "+str(playerpoke.wall)
         textP = textP + "\tTHRASHUSED:  "+str(playerpoke.thrashUsed)+"\tBIDEUSED:  "+str(playerpoke.bideUsed) + "\tBINDUSED:  "+str(playerpoke.bindUsed)+"\tBIDEDAM:  "+str(playerpoke.bideDamage) + "\tBINDDAM:  "+str(playerpoke.bindDamage)
-        textP = textP + "\nTYPES:  "+str(playerpoke.types) + "\tSUB:  " + str(playerpoke.subbing) + "\tSUBHP: " + str(playerpoke.subHP) + "\tMAXPP:  "+str(playerpoke.maxPP) + "\t\tMOVES: ["
+        textP = textP + "\nTYPES:  "+str(playerpoke.types) + "\tXACC: "+str(playerpoke.xAcc)+"\tSUB:  " + str(playerpoke.subbing) + "\tSUBHP: " + str(playerpoke.subHP) + "\tMAXPP:  "+str(playerpoke.maxPP) + "\t\tMOVES: ["
         for i in range(len(playerpoke.moveset)):
             textP = textP + playerpoke.moveset[i]["name"]
             if i != (len(playerpoke.moveset)-1):

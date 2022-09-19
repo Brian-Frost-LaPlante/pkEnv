@@ -66,21 +66,25 @@ def accuracyCheck(pokeAttacker,pokeDefender,moveAddress):
 
     if pokeDefender.whereIs != "field":
         moveResult =  "fail:"+pokeDefender.whereIs 
+
     if pokeAttacker.moveset[moveAddress]["name"] == "Rage":
         if pokeAttacker.rageAcc.casefold()!="standard":
             accRoll = 1
         if pokeAttacker.modifiers[4]-pokeDefender.modifiers[5] < 0:
-            if acc <= accRoll:
+            if (acc <= accRoll) and (not pokeAttacker.xAcc):
                 return "fail:miss"
             else:
                 return "success"
         else:
-            if acc <= accRoll:
+            if (acc <= accRoll) and (not pokeAttacker.xAcc):
                 return "gen1miss_rage"
             else:
                 return "success"
+    elif pokeAttacker.xAcc:
+        moveResult = "success" # xAcc seems to avoid even the gen1 miss!
     elif acc<=accRoll:
         moveResult = "fail:miss"    
+    
     if (pokeAttacker.turncount["bide"]==-1) and (pokeAttacker.turncount["thrash"]==-1) and (pokeAttacker.raging == -1):
         # bide/thrash PP only decreases on first turn
         if pokeAttacker.moveset[len(pokeAttacker.moveset)-1]["name"]!="Struggle":

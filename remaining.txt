@@ -2,23 +2,35 @@ Freeze/hyperbeam/metronome  PP rollover glitches
 hyper beam bind glitch
 horrible two-hit haze glitch
 counter "desynchronize" on paralysis, counter on items
-stat changes that occur when burn or paralyze is healed
+stat changes that occur when burn or paralyze is healed and rage is applied
+Weird >999 stat glitch
 metronome/mirrormove for bide, thrash, struggle?, rage
+need to research if bidei/transform/whirlwind can hit underground/flying
+https://archives.glitchcity.info/forums/board-10/thread-6649/page-0.html
+research if antidote/full heal resets the N value for poison
 
 
-UI update to show pretty much everything
+Here is a list of items. Most cannot be used in battle
+https://bulbapedia.bulbagarden.net/wiki/List_of_items_by_index_number_(Generation_I)
 
-items
+items (27 total):
+potion/super potion/hyper potion/max potion/fresh water/soda pop/lemonade
+antidote/burn heal/ice heal/awakening/paralyz heal/full heal
+full restore
+revive/max revive
+x accuracy/x attack/x defend/x speed/x special/dire hit
+guard spec
+ether/max ether/elixer/max elixer
+
 
 extensive testing
 
 
 moves to do:
 
-substitute
+none :)
 
-
-implemented move categories:
+implemented move categories: all :)
 damage: standard
 	instakill
 	enemy:stat
@@ -54,5 +66,6 @@ struggle
 bindlike (with PP rollover glitch!)
 rage
 transform
+substitute
 
 Maybe -- experience + leveling

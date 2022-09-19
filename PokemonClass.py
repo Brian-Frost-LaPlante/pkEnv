@@ -106,6 +106,7 @@ class Pokemon:
             self.charging = -1 # this will be the index of the move that is charging
             self.mimic_on = -1 # for mimic
             self.transformed = False
+            self.xAcc = False
 
 
         elif reason == "+paralyze":
@@ -207,6 +208,7 @@ class Pokemon:
     def statReset(self):
         stats = self.outOfBattleStats
         self.modifiers = [0,0,0,0,0,0,0]
+        self.xAcc = False # is this true?
         self.confused = False
         self.activeStats[1:] = stats[1:]
         self.setStats()
@@ -292,3 +294,5 @@ class Pokemon:
         self.recharging = 0 # for hyper beam
         self.charging = -1 # this will be the index of the move that is charging
         self.mimic_on = -1 # for mimic
+
+        self.xAcc = False
