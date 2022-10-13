@@ -3,6 +3,7 @@ import random
 import math
 from AccuracyCheck import accuracyCheck
 from ParseAttack import parseAttack
+from ParseItem import parseItem
 from Stage2Mult import stage2Mult
 import tkinter
 from tkinter import *
@@ -39,11 +40,7 @@ class Battle:
             "items":trainer.items
         }
         return availableActions
-
-    def useItem(self,trainer,itemAddress):
-        item = trainer.items[itemAddress]
-        return
-
+    
     def disableCheck(self,pokeChar):
         if (pokeChar.disable != ""):
             pokeChar.turncount["disable"] = pokeChar.turncount["disable"]-1
@@ -579,7 +576,7 @@ class Battle:
                         print("You have no items!")
                     else:
                         for i in range(len(items)):
-                            print("["+str(i+1)+"]     "+items[i].name)
+                            print("["+str(i+1)+"]     "+items[i])
                         print("Which item do you want to use? (0 to choose another option)")
                         option = input()
                         if (not option.isdigit()):
@@ -661,10 +658,10 @@ class Battle:
             self.guiUpdate()
         # item happens next
         if optionTypePlayer == "item":
-            self.useItem(self.player,optionPlayer[1])
+            parseItem(self.player,self.enemy,optionPlayer[1])
             self.guiUpdate()
         if optionTypeEnemy == "item":
-            self.useItem(self.enemy,optionEnemy[1])
+            parseItem(self.enemy,self.player,optionEnemy[1])
             self.guiUpdate()
         # attacks happen next
         if optionTypeEnemy == "attack" or optionTypePlayer == "attack":

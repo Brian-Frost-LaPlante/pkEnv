@@ -116,13 +116,12 @@ class Pokemon:
             # similar for burn
             self.activeStats[1] = max(1,math.floor(self.attack/2))
 
-        elif reason[0:2] == "-p":
-            # the case of removing a stat condition is horribly confusing and depends on the item or method being used to do so.
-            # I WILL ADD THIS LATER
-            return
-        elif reason[0:2] == "-b":
-            # the case of removing a stat condition is horribly confusing and depends on the item or method being used to do so.
-            # I WILL ADD THIS LATER
+        elif reason == "item":
+            stats = self.outOfBattleStats[:]
+            self.activeStats = stats
+            self.setStats
+            # the case of removing a stat condition is horribly confusing and depends on the item or method being used to do so. In some methods, nothing happens. I dealt with that. In others (here) stats are reset but STAGES aren't. WEIRD.
+            
             return
         
         elif reason[0:3] == "mod":

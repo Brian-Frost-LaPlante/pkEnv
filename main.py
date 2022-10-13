@@ -50,8 +50,8 @@ pk3 = Pokemon(name,level,stats,stats[0],moves,[5,5,5,5],[5,5,5,5],pokemonList,mo
 #print(max(damage))
 #print(min(damage))
 
-player = Trainer("brian",[pk1],["another","more","some others"],[1,1,1,1])
-enemy = Trainer("kevin",[pk2,pk3],["briantime XP"],[1,1,1,0])
+player = Trainer("brian",[pk1],["paralyz heal","potion","full heal"],[1,1,1,1])
+enemy = Trainer("kevin",[pk2,pk3],["full restore"],[1,1,1,0])
 battle = Battle(player,enemy,typeList,moveList)
 #playerOptions = battle.options(player)
 #enemyOptions = battle.options(enemy)
